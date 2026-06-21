@@ -14,7 +14,10 @@ const PRAISE = [
 ]
 
 /** ตอบถูกแล้วไปข้อถัดไปอัตโนมัติภายในกี่วินาที */
-const AUTO_ADVANCE_SECONDS = 5
+const AUTO_ADVANCE_SECONDS = 10
+
+/** ตอบผิดได้กี่ครั้งก่อนเฉลย */
+const MAX_TRIES = 2
 
 interface Props {
   question: Question
@@ -22,17 +25,20 @@ interface Props {
   total: number
   showHints: boolean
   sound: boolean
-  /** เรียกครั้งเดียวเมื่อตอบ พร้อมผลถูก/ผิด */
+  /** เรียกครั้งเดียวเมื่อสรุปผลข้อนั้น พร้อมผลถูก/ผิดสุดท้าย */
   onAnswered: (correct: boolean) => void
   onNext: () => void
   isLast: boolean
 }
 
 export function QuestionView({ question, index, total, showHints, sound, onAnswered, onNext, isLast }: Props) {
-  const [answered, setAnswered] = useState(false)
+  const [locked, setLocked] = useState(false) // สรุปผลแล้ว (ตอบถูก หรือ ผิดครบ 2 ครั้ง)
   const [correct, setCorrect] = useState(false)
+  const [wrongTries, setWrongTries] = useState(0)
   const [chosen, setChosen] = useState<string | null>(null)
+  const [wrongChoices, setWrongChoices] = useState<string[]>([])
   const [inputVal, setInputVal] = useState('')
+  const [feedbackMsg, setFeedbackMsg] = useState('')
   const [countdown, setCountdown] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -46,11 +52,15 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
     [question.id],
   )
 
+  // รีเซ็ตสถานะทั้งหมดเมื่อเปลี่ยนข้อ
   useEffect(() => {
-    setAnswered(false)
+    setLocked(false)
     setCorrect(false)
+    setWrongTries(0)
     setChosen(null)
+    setWrongChoices([])
     setInputVal('')
+    setFeedbackMsg('')
     setCountdown(null)
     if (question.kind === 'fill') {
       const t = setTimeout(() => inputRef.current?.focus(), 120)
@@ -58,16 +68,16 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
     }
   }, [question.id])
 
-  // ตอบถูก → นับถอยหลังแล้วไปข้อถัดไปอัตโนมัติ (ตอบผิดให้กดเองเพื่ออ่านวิธีคิด)
+  // ตอบถูก → นับถอยหลังแล้วไปข้อถัดไปอัตโนมัติ
   // หมายเหตุ: ตัว updater ต้องบริสุทธิ์ (ไม่มี side effect) เพราะ StrictMode เรียกซ้ำ
   useEffect(() => {
-    if (!answered || !correct) return
+    if (!locked || !correct) return
     setCountdown(AUTO_ADVANCE_SECONDS)
     const id = setInterval(() => {
       setCountdown((c) => (c !== null && c > 0 ? c - 1 : 0))
     }, 1000)
     return () => clearInterval(id)
-  }, [answered, correct])
+  }, [locked, correct])
 
   // เมื่อนับถอยหลังถึง 0 จึงไปข้อถัดไป (แยกออกจาก updater เพื่อความถูกต้อง)
   useEffect(() => {
@@ -75,25 +85,42 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
   }, [countdown])
 
   function submit(value: string) {
-    if (answered) return
+    if (locked) return
     const ok = isCorrect(value, question.answer)
-    setAnswered(true)
-    setCorrect(ok)
-    setChosen(value)
+
     if (ok) {
+      setLocked(true)
+      setCorrect(true)
+      setChosen(value)
+      setFeedbackMsg(wrongTries > 0 ? 'ถูกต้องแล้ว เก่งมากที่ตั้งใจ ⭐' : pick(PRAISE))
       playCorrect(sound)
       fireConfetti()
-    } else {
-      playWrong(sound)
+      onAnswered(true)
+      return
     }
-    onAnswered(ok)
-  }
 
-  const feedback = answered
-    ? correct
-      ? pick(PRAISE)
-      : 'ยังไม่ถูกต้อง ไม่เป็นไร ลองอ่านวิธีคิดด้านล่าง'
-    : ''
+    // ตอบผิด
+    playWrong(sound)
+    const tries = wrongTries + 1
+    setWrongTries(tries)
+    setChosen(value)
+    if (question.kind === 'choice') setWrongChoices((w) => [...w, value])
+
+    if (tries < MAX_TRIES) {
+      // ผิดครั้งแรก → ยังไม่เฉลย ให้ลองอีกครั้ง
+      setFeedbackMsg('ยังไม่ถูกต้อง ลองอีกครั้งนะ')
+      if (question.kind === 'fill') {
+        setInputVal('')
+        setTimeout(() => inputRef.current?.focus(), 50)
+      }
+    } else {
+      // ผิดครบ 2 ครั้ง → เฉลย
+      setLocked(true)
+      setCorrect(false)
+      setFeedbackMsg('ยังไม่ถูกต้อง ไม่เป็นไร ลองอ่านวิธีคิดด้านล่าง')
+      onAnswered(false)
+    }
+  }
 
   return (
     <section className="card questionCard">
@@ -108,12 +135,15 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
         <div className="choiceGrid">
           {choices.map((value) => {
             let cls = 'choice'
-            if (answered) {
+            if (locked) {
               if (isCorrect(value, question.answer)) cls += ' correct'
-              else if (value === chosen) cls += ' wrong'
+              else if (value === chosen || wrongChoices.includes(value)) cls += ' wrong'
+            } else if (wrongChoices.includes(value)) {
+              cls += ' wrong'
             }
+            const disabled = locked || wrongChoices.includes(value)
             return (
-              <button key={value} className={cls} disabled={answered} onClick={() => submit(value)}>
+              <button key={value} className={cls} disabled={disabled} onClick={() => submit(value)}>
                 {value}
               </button>
             )
@@ -127,13 +157,13 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
             inputMode="numeric"
             placeholder="พิมพ์คำตอบ"
             value={inputVal}
-            disabled={answered}
+            disabled={locked}
             onChange={(e) => setInputVal(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && inputVal.trim() !== '') submit(inputVal)
             }}
           />
-          {!answered && (
+          {!locked && (
             <button className="primary" disabled={inputVal.trim() === ''} onClick={() => submit(inputVal)}>
               ส่งคำตอบ
             </button>
@@ -141,13 +171,21 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
         </div>
       )}
 
-      {showHints && !answered && question.hint && <div className="hintBox">💡 {question.hint}</div>}
+      {showHints && !locked && question.hint && <div className="hintBox">💡 {question.hint}</div>}
 
-      {answered && (
+      {feedbackMsg && (
+        <div className="feedback" style={{ color: correct ? 'var(--green2)' : 'var(--red)' }}>
+          {feedbackMsg}
+        </div>
+      )}
+
+      {/* ผิดครั้งแรก: ยังไม่เฉลย บอกให้ลองอีกครั้ง */}
+      {!locked && wrongTries > 0 && (
+        <div className="mini" style={{ marginTop: 2 }}>เหลือโอกาสอีก {MAX_TRIES - wrongTries} ครั้ง</div>
+      )}
+
+      {locked && (
         <>
-          <div className="feedback" style={{ color: correct ? 'var(--green2)' : 'var(--red)' }}>
-            {feedback}
-          </div>
           {(!correct || showHints) && question.explain && (
             <div className="explain">วิธีคิด: {question.explain}</div>
           )}
