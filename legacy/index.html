@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ผจญภัยดาวคณิตของมิลิน</title>
+<style>
+  :root{
+    --ink:#203047;
+    --soft:#52657f;
+    --muted:#72829a;
+    --paper:#ffffff;
+    --paper2:#f7fbff;
+    --line:#e3edf8;
+    --blue:#55a8ff;
+    --blue2:#2f80ed;
+    --pink:#ff7bb5;
+    --orange:#ff9f43;
+    --yellow:#ffd166;
+    --green:#28c878;
+    --green2:#10a461;
+    --purple:#8b7cf6;
+    --red:#ff5c72;
+    --shadow:0 18px 45px rgba(53,72,108,.18);
+    --softShadow:0 8px 22px rgba(53,72,108,.12);
+    --radius:28px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:"Tahoma","Arial",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 8% 9%, rgba(255,209,102,.42) 0 92px, transparent 94px),
+      radial-gradient(circle at 91% 13%, rgba(85,168,255,.22) 0 145px, transparent 148px),
+      radial-gradient(circle at 15% 92%, rgba(255,123,181,.22) 0 150px, transparent 152px),
+      linear-gradient(135deg,#edf8ff 0%,#fff9ec 48%,#f5f0ff 100%);
+    overflow-x:hidden;
+  }
+  body::before,body::after{
+    content:"";
+    position:fixed;
+    z-index:-1;
+    border-radius:50%;
+    animation:floatBg 12s ease-in-out infinite;
+  }
+  body::before{right:5vw;bottom:10vh;width:180px;height:180px;background:#c7ecff;opacity:.48}
+  body::after{left:5vw;top:18vh;width:130px;height:130px;background:#ffe1ef;opacity:.55;animation-delay:2s}
+  @keyframes floatBg{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
+
+  .app{max-width:1220px;margin:auto;padding:18px}
+  .top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:16px;
+    margin-bottom:14px;
+  }
+  .brand{display:flex;align-items:center;gap:14px}
+  .mark{
+    width:68px;height:68px;border-radius:24px;
+    display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--yellow),var(--orange));
+    box-shadow:var(--softShadow);
+    font-size:38px;
+    transform:rotate(-8deg);
+    animation:starPulse 2.2s ease-in-out infinite;
+  }
+  @keyframes starPulse{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(4deg) scale(1.06)}}
+  h1{margin:0;font-size:clamp(25px,4vw,44px);line-height:1.06;letter-spacing:-.4px}
+  .caption{margin-top:5px;color:var(--soft);font-size:16px;line-height:1.45}
+  .pill{
+    border:2px solid rgba(255,255,255,.85);
+    background:rgba(255,255,255,.78);
+    border-radius:999px;
+    padding:11px 16px;
+    box-shadow:var(--softShadow);
+    font-weight:900;
+    white-space:nowrap;
+  }
+
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+  .card{
+    background:rgba(255,255,255,.9);
+    border:2px solid rgba(255,255,255,.94);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:22px;
+    backdrop-filter:blur(10px);
+  }
+  .hero{grid-column:span 8;position:relative;overflow:hidden;min-height:410px}
+  .side{grid-column:span 4}
+  .hero::after{
+    content:"";
+    position:absolute;right:-78px;bottom:-74px;
+    width:320px;height:320px;border-radius:50%;
+    background:radial-gradient(circle,#fff4bf 0 30%,#ffd166 31% 43%,#ff7bb5 44% 58%,transparent 60%);
+    opacity:.42;
+  }
+  .mascotRow{display:flex;align-items:center;gap:12px;margin:10px 0 8px;position:relative;z-index:1}
+  .mascot{
+    width:88px;height:88px;border-radius:30px;
+    background:linear-gradient(135deg,#fff,#fff4c7);
+    display:grid;place-items:center;
+    font-size:50px;
+    box-shadow:var(--softShadow);
+    animation:bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .speech{
+    background:#fff;border:2px solid var(--line);border-radius:24px;
+    padding:12px 16px;
+    color:var(--soft);
+    font-weight:900;
+    line-height:1.5;
+    box-shadow:var(--softShadow);
+  }
+  .heroTitle{
+    position:relative;z-index:1;
+    margin:12px 0 12px;
+    font-size:clamp(34px,6vw,66px);
+    line-height:1.03;
+    font-weight:900;
+  }
+  .heroText{
+    position:relative;z-index:1;
+    color:var(--soft);
+    font-size:20px;
+    line-height:1.65;
+    max-width:760px;
+    margin:0;
+  }
+
+  .bankStats{
+    position:relative;z-index:1;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin:18px 0 4px;
+  }
+  .stat{
+    background:#fff;
+    border:2px solid #e8edf7;
+    border-radius:24px;
+    padding:14px;
+    min-height:120px;
+  }
+  .stat .num{font-size:34px;font-weight:900;color:var(--blue2);line-height:1}
+  .stat b{display:block;margin:6px 0 5px}
+  .stat span{display:block;color:var(--muted);font-size:14px;line-height:1.45}
+
+  button{
+    border:0;border-radius:22px;
+    padding:14px 19px;
+    font-weight:900;
+    font-size:18px;
+    cursor:pointer;
+    box-shadow:0 10px 18px rgba(42,58,91,.15);
+    transition:transform .16s ease, filter .16s ease, box-shadow .16s ease;
+    font-family:inherit;
+  }
+  button:hover{transform:translateY(-2px);filter:brightness(1.02);box-shadow:0 15px 24px rgba(42,58,91,.18)}
+  button:active{transform:translateY(0)}
+  button:disabled{opacity:.7;cursor:not-allowed;transform:none}
+  .btnRow{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px;position:relative;z-index:1}
+  .primary{background:linear-gradient(135deg,var(--pink),var(--orange));color:#fff}
+  .secondary{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff}
+  .green{background:linear-gradient(135deg,#3bdc97,var(--green2));color:#fff}
+  .ghost{background:#fff;border:2px solid var(--line);color:var(--ink)}
+  .smallBtn{font-size:15px;padding:10px 13px;border-radius:16px}
+
+  .sectionTitle{margin:0 0 10px;font-size:24px}
+  .topic{
+    display:flex;align-items:center;gap:12px;
+    padding:12px;border-radius:20px;
+    background:var(--paper2);
+    border:1px solid #edf3fb;
+    margin:9px 0;
+  }
+  .topicIcon{
+    min-width:46px;width:46px;height:46px;border-radius:16px;
+    display:grid;place-items:center;background:#fff;
+    box-shadow:0 8px 15px rgba(42,58,91,.08);
+    font-size:25px;
+  }
+  .topic b{display:block;font-size:16px}
+  .topic span{display:block;color:var(--muted);font-size:14px;margin-top:2px;line-height:1.35}
+  .note{
+    margin-top:12px;
+    padding:12px 14px;
+    border-radius:20px;
+    background:#fff;
+    border:2px dashed #dce7f5;
+    color:var(--soft);
+    line-height:1.55;
+    font-weight:800;
+  }
+
+  .missionGrid{
+    position:relative;z-index:1;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+    margin:18px 0 4px;
+  }
+  .missionCard{
+    background:#fff;border:3px solid #e8edf7;border-radius:26px;
+    padding:16px;min-height:172px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  }
+  .missionCard:hover{transform:translateY(-3px);box-shadow:0 15px 26px rgba(42,58,91,.14);border-color:#b8dcff}
+  .missionIcon{font-size:40px;line-height:1;margin-bottom:8px}
+  .missionCard b{font-size:22px;display:block;margin-bottom:5px}
+  .missionCard span{display:block;color:var(--soft);line-height:1.45;font-size:14px}
+  .customBox{display:none;position:relative;z-index:1;margin-top:14px}
+  .settings{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;position:relative;z-index:1}
+  .settingBox{
+    border:3px solid #e8edf7;
+    border-radius:24px;
+    padding:14px;
+    background:#fff;
+  }
+  .settingBox label{display:block;font-weight:900;margin-bottom:8px}
+  select{
+    width:100%;
+    border:2px solid #dce7f5;
+    border-radius:16px;
+    padding:12px;
+    font-size:16px;
+    font-family:inherit;
+    font-weight:800;
+    color:var(--ink);
+    background:#fff;
+  }
+
+  #game{display:none}
+  .gameTop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .progressOuter{flex:1;min-width:230px;height:18px;background:#e8edf7;border-radius:999px;overflow:hidden}
+  .progressInner{
+    height:100%;width:0%;
+    background:linear-gradient(90deg,var(--green),var(--yellow),var(--pink));
+    border-radius:999px;transition:width .35s ease;
+  }
+  .stars{font-size:26px;letter-spacing:2px;white-space:nowrap}
+  .questionCard{
+    min-height:560px;
+    margin-top:16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+  }
+  .tag{
+    display:inline-flex;align-items:center;gap:8px;
+    border-radius:999px;
+    padding:9px 15px;
+    background:#f0f6ff;
+    font-weight:900;color:#42628b;
+    margin-bottom:12px;
+  }
+  .question{
+    font-size:clamp(29px,5vw,56px);
+    font-weight:900;
+    line-height:1.18;
+    margin:8px 0 12px;
+    letter-spacing:-.4px;
+  }
+  .instruction{
+    font-size:21px;
+    color:var(--soft);
+    font-weight:800;
+    line-height:1.5;
+    margin:0 0 8px;
+  }
+  .visual{
+    min-height:125px;
+    margin:12px auto 14px;
+    display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+    max-width:830px;
+  }
+  .obj{
+    display:inline-block;
+    font-size:40px;
+    filter:drop-shadow(0 5px 3px rgba(0,0,0,.08));
+    animation:bob 1.8s infinite ease-in-out;
+  }
+  .obj:nth-child(2n){animation-delay:.2s}
+  .obj:nth-child(3n){animation-delay:.35s}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-7px) rotate(3deg)}}
+  .choiceGrid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(150px,1fr));
+    gap:14px;
+    width:min(760px,100%);
+    margin-top:6px;
+  }
+  .choice{
+    font-size:30px;
+    padding:18px 16px;
+    border-radius:24px;
+    background:#fff;color:var(--ink);
+    border:3px solid #e5ecf6;
+    min-height:76px;
+  }
+  .choice.correct{background:#eafff3;border-color:#2ecc71}
+  .choice.wrong{background:#fff1f2;border-color:var(--red)}
+  .inputRow{
+    display:none;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;width:100%;
+  }
+  input.answer{
+    font-size:34px;font-weight:900;text-align:center;
+    width:min(340px,90%);
+    padding:16px;border-radius:22px;
+    border:4px solid #dce7f5;outline:none;
+    font-family:inherit;color:var(--ink);background:#fff;
+  }
+  input.answer:focus{border-color:var(--blue);box-shadow:0 0 0 5px rgba(85,168,255,.15)}
+  .hintBox{
+    display:none;
+    background:#fff8dd;
+    border:2px solid #ffe29a;
+    border-radius:20px;
+    padding:11px 15px;
+    max-width:800px;
+    margin:11px auto 0;
+    font-size:18px;
+    color:#715200;
+    line-height:1.6;
+  }
+  .feedback{min-height:48px;font-size:28px;font-weight:900;margin:13px 0 2px}
+  .explain{
+    font-size:18px;
+    color:var(--soft);
+    max-width:820px;
+    margin:auto;
+    line-height:1.65;
+  }
+
+  .overlay{
+    display:none;position:fixed;inset:0;
+    background:rgba(23,31,48,.42);
+    z-index:20;
+    align-items:center;justify-content:center;
+    padding:18px;
+  }
+  .modal{
+    background:#fff;border-radius:30px;box-shadow:var(--shadow);
+    padding:24px;max-width:830px;width:100%;
+    text-align:center;max-height:92vh;overflow:auto;
+  }
+  .scoreNum{font-size:76px;font-weight:900;margin:6px 0;color:var(--pink)}
+  .medal{font-size:31px;font-weight:900;line-height:1.35}
+  .report{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;text-align:left;margin:14px 0}
+  .report div{background:#f7f9ff;border-radius:16px;padding:11px;line-height:1.55}
+  .mini{font-size:13px;color:var(--muted);line-height:1.55}
+  .confetti{
+    position:fixed;top:-20px;font-size:28px;z-index:30;
+    animation:fall 1.6s ease-in forwards;pointer-events:none;
+  }
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:0}}
+
+  @media (max-width:980px){
+    .hero,.side{grid-column:span 12}
+    .bankStats,.missionGrid,.settings{grid-template-columns:1fr}
+  }
+  @media (max-width:720px){
+    .top{align-items:flex-start}
+    .pill.hideMobile{display:none}
+    .choiceGrid{grid-template-columns:1fr}
+    .questionCard{min-height:630px}
+    .report{grid-template-columns:1fr}
+    .heroTitle{font-size:38px}
+    .heroText{font-size:18px}
+    .mascotRow{align-items:flex-start}
+    .speech{font-size:14px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">⭐</div>
+      <div>
+        <h1>ผจญภัยดาวคณิตของมิลิน</h1>
+        <div class="caption">เล่นสนุก คิดเป็นขั้นตอน และเก็บดาวให้ครบ</div>
+      </div>
+    </div>
+    <div class="pill hideMobile">พร้อมเก็บดาว</div>
+  </header>
+
+  <main id="home">
+    <section class="grid">
+      <div class="card hero">
+        <div class="mascotRow">
+          <div class="mascot" aria-hidden="true">🐰</div>
+          <div class="speech">พร้อมไหมคะ เลือกภารกิจ แล้วมาเก็บดาวกันเลย</div>
+        </div>
+
+        <div class="heroTitle">วันนี้มิลินจะเก็บดาว<br>ได้กี่ดวง</div>
+        <p class="heroText">
+          เลือกภารกิจที่ชอบ แล้วเริ่มเล่นได้ทันที ทุกข้อช่วยให้มิลินคิดเลขอย่างมั่นใจขึ้นทีละนิด
+        </p>
+
+        <div class="missionGrid">
+          <div class="missionCard">
+            <div><div class="missionIcon">🌈</div><b>ภารกิจสายรุ้ง</b><span>เริ่มเล่นแบบสบาย ๆ มีคำแนะนำหลังตอบ</span></div>
+            <button class="secondary smallBtn" onclick="startPreset('rainbow')">เริ่มภารกิจ</button>
+          </div>
+          <div class="missionCard">
+            <div><div class="missionIcon">⭐</div><b>ภารกิจดวงดาว</b><span>ฝึกแบบจริงจังขึ้น เพื่อเก็บดาวให้มากกว่าเดิม</span></div>
+            <button class="primary smallBtn" onclick="startPreset('star')">เริ่มภารกิจ</button>
+          </div>
+          <div class="missionCard">
+            <div><div class="missionIcon">👑</div><b>ภารกิจมงกุฎ</b><span>ท้าทายสำหรับวันที่มิลินพร้อมเป็นแชมป์คณิต</span></div>
+            <button class="green smallBtn" onclick="startPreset('crown')">เริ่มภารกิจ</button>
+          </div>
+        </div>
+
+        <div class="btnRow">
+          <button class="ghost smallBtn" onclick="toggleCustom()">เลือกภารกิจเอง</button>
+        </div>
+
+        <div class="customBox" id="customBox">
+          <div class="settings">
+            <div class="settingBox">
+              <label for="modeSelect">รูปแบบ</label>
+              <select id="modeSelect">
+                <option value="practice">เล่นพร้อมคำแนะนำ</option>
+                <option value="exam">เล่นแบบทดสอบ</option>
+              </select>
+            </div>
+            <div class="settingBox">
+              <label for="countSelect">ความยาวภารกิจ</label>
+              <select id="countSelect">
+                <option value="20">ภารกิจสั้น</option>
+                <option value="30">ภารกิจพอดี</option>
+                <option value="50">ภารกิจยาว</option>
+                <option value="100">ภารกิจใหญ่</option>
+              </select>
+            </div>
+            <div class="settingBox">
+              <label for="mixSelect">ความท้าทาย</label>
+              <select id="mixSelect">
+                <option value="balanced">สมดุล</option>
+                <option value="exam">อุ่นเครื่อง</option>
+                <option value="challenge">ท้าทายพิเศษ</option>
+              </select>
+            </div>
+          </div>
+          <div class="btnRow">
+            <button class="primary" onclick="startGame()">เริ่มภารกิจที่เลือก</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="card side">
+        <h2 class="sectionTitle">ด่านคณิตที่มิลินจะเจอ</h2>
+        <div class="topic"><div class="topicIcon">🔢</div><div><b>จำนวนและค่าประจำหลัก</b><span>หลักสิบ หลักหน่วย และจำนวนที่ใหญ่ขึ้น</span></div></div>
+        <div class="topic"><div class="topicIcon">⚖️</div><div><b>เปรียบเทียบจำนวน</b><span>เลือกเครื่องหมาย &gt; &lt; = และหาจำนวนมากกว่า น้อยกว่า</span></div></div>
+        <div class="topic"><div class="topicIcon">🧩</div><div><b>การกระจายจำนวน</b><span>แยกและรวมจำนวน เช่น 70 + 8 = 78</span></div></div>
+        <div class="topic"><div class="topicIcon">🚂</div><div><b>เรียงลำดับและรูปแบบจำนวน</b><span>เรียงจำนวน และเติมจำนวนที่หายไปในแบบรูป</span></div></div>
+        <div class="topic"><div class="topicIcon">🍎</div><div><b>บวก ลบ และโจทย์ปัญหา</b><span>ส่วนรวม ส่วนย่อย และโจทย์สองขั้น</span></div></div>
+        <div class="topic"><div class="topicIcon">🏁</div><div><b>การบอกอันดับ</b><span>นับลำดับจากซ้าย ขวา และจากตำแหน่งที่กำหนด</span></div></div>
+        <div class="note">
+          เล่นให้สนุก ค่อย ๆ คิด และเก็บดาวจากทุกด่านให้ได้มากที่สุด
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <main id="game">
+    <section class="card">
+      <div class="gameTop">
+        <button class="ghost smallBtn" onclick="goHome()">กลับหน้าแรก</button>
+        <div class="progressOuter"><div class="progressInner" id="bar"></div></div>
+        <div class="pill" id="counter">ข้อ 1/20</div>
+        <div class="pill" id="levelLabel">ผสม</div>
+        <div class="stars" id="stars">☆☆☆☆☆</div>
+      </div>
+    </section>
+
+    <section class="card questionCard">
+      <div class="tag" id="topicTag">หัวข้อ</div>
+      <div class="question" id="qText">คำถาม</div>
+      <p class="instruction" id="qSmall"></p>
+      <div class="visual" id="visual"></div>
+
+      <div class="choiceGrid" id="choices"></div>
+
+      <div class="inputRow" id="inputRow">
+        <input class="answer" id="answerInput" inputmode="numeric" placeholder="พิมพ์คำตอบ">
+        <button class="primary" onclick="submitInput()">ส่งคำตอบ</button>
+      </div>
+
+      <div class="hintBox" id="hintBox"></div>
+      <div class="feedback" id="feedback"></div>
+      <div class="explain" id="explain"></div>
+
+      <div class="btnRow" id="nextBox" style="display:none">
+        <button class="green" onclick="nextQuestion()">ไปข้อถัดไป</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="overlay" id="resultModal">
+  <div class="modal">
+    <h2 class="sectionTitle">สรุปผลการทำแบบฝึกของมิลิน</h2>
+    <div class="scoreNum" id="scoreNum">0/20</div>
+    <div class="medal" id="medal"></div>
+    <div class="report" id="report"></div>
+    <div id="advice" class="note" style="text-align:left"></div>
+    <div class="btnRow" style="justify-content:center">
+      <button class="primary" onclick="closeResult();startGame()">สุ่มชุดใหม่</button>
+      <button class="secondary" onclick="closeResult();startQuickPractice()">ฝึกเร็วอีกครั้ง</button>
+      <button class="ghost" onclick="closeResult();goHome()">กลับหน้าแรก</button>
+    </div>
+    <div class="mini">เริ่มภารกิจใหม่ได้ทันที เพื่อให้มิลินได้ฝึกหลายรูปแบบอย่างสนุกและมั่นใจ</div>
+  </div>
+</div>
+
+<script>
+const questionBank = [
+  {id:1,level:"easy",topic:"place",text:"จำนวน 14 มีหลักสิบกี่สิบ",small:"โปรดดูตัวเลขในหลักสิบ",visual:"🔟🔟",answer:"1",choices:["1","4","10","14"],hint:"หลักสิบอยู่ด้านซ้ายของจำนวนสองหลัก",explain:"14 คือ 1 สิบ กับ 4 หน่วย"},
+  {id:2,level:"easy",topic:"place",text:"จำนวน 18 มีหลักหน่วยเท่าไร",small:"โปรดดูตัวเลขด้านขวาสุด",visual:"⭐⭐⭐⭐⭐⭐⭐⭐",answer:"8",choices:["1","8","10","18"],hint:"หลักหน่วยคือตัวเลขด้านขวาสุด",explain:"18 มีหลักหน่วยเป็น 8"},
+  {id:3,level:"easy",topic:"place",text:"1 สิบ กับ 6 หน่วย เขียนเป็นจำนวนใด",small:"โปรดรวมหลักสิบและหลักหน่วย",visual:"🔟 ⭐⭐⭐⭐⭐⭐",answer:"16",choices:["10","6","16","61"],hint:"1 สิบ คือ 10 แล้วบวก 6",explain:"10 + 6 = 16"},
+  {id:4,level:"easy",topic:"compare",text:"12 ? 15",small:"โปรดเลือกเครื่องหมายที่ถูกต้อง",visual:"🐊",answer:"<",choices:["<",">","=","≠"],hint:"12 น้อยกว่า 15",explain:"12 < 15"},
+  {id:5,level:"easy",topic:"compare",text:"20 ? 19",small:"โปรดเลือกเครื่องหมายที่ถูกต้อง",visual:"🐊",answer:">",choices:[">","<","=","≠"],hint:"20 มากกว่า 19",explain:"20 > 19"},
+  {id:6,level:"easy",topic:"compare",text:"17 ? 17",small:"โปรดเลือกเครื่องหมายที่ถูกต้อง",visual:"⚖️",answer:"=",choices:["=",">","<","≠"],hint:"ถ้าจำนวนเท่ากัน ใช้เครื่องหมาย =",explain:"17 = 17"},
+  {id:7,level:"easy",topic:"expand",text:"13 กระจายจำนวนได้อย่างไร",small:"โปรดแยกเป็นสิบและหน่วย",visual:"13 = ? + ?",answer:"10+3",choices:["10+3","1+3","30+1","13+0"],hint:"13 มี 1 สิบ และ 3 หน่วย",explain:"13 = 10 + 3"},
+  {id:8,level:"easy",topic:"expand",text:"10 + 9 = ?",small:"โปรดรวมจำนวน",visual:"10 + 9",answer:"19",choices:["9","10","18","19"],hint:"10 รวมกับ 9 ได้ 19",explain:"10 + 9 = 19"},
+  {id:9,level:"easy",topic:"order",text:"เรียงจำนวน 8  3  6",small:"จากน้อยไปมาก",visual:"🚂 8 3 6",answer:"3, 6, 8",choices:["3, 6, 8","8, 6, 3","6, 3, 8","3, 8, 6"],hint:"เริ่มจากจำนวนที่น้อยที่สุด",explain:"3 น้อยที่สุด ตามด้วย 6 และ 8"},
+  {id:10,level:"easy",topic:"order",text:"เรียงจำนวน 11  18  15",small:"จากมากไปน้อย",visual:"🚂 11 18 15",answer:"18, 15, 11",choices:["18, 15, 11","11, 15, 18","15, 18, 11","18, 11, 15"],hint:"เริ่มจากจำนวนที่มากที่สุด",explain:"18 มากที่สุด ตามด้วย 15 และ 11"},
+  {id:11,level:"easy",topic:"part",text:"มีดาว 5 ดวง ได้เพิ่ม 3 ดวง มีทั้งหมดกี่ดวง",small:"โปรดนำมารวมกัน",visual:"⭐⭐⭐⭐⭐ + ⭐⭐⭐",answer:"8",choices:["2","5","8","9"],hint:"คำว่าได้เพิ่ม หมายถึงบวก",explain:"5 + 3 = 8"},
+  {id:12,level:"easy",topic:"part",text:"มีลูกอม 9 เม็ด กินไป 4 เม็ด เหลือกี่เม็ด",small:"โปรดหาจำนวนที่เหลือ",visual:"🍭🍭🍭🍭🍭🍭🍭🍭🍭",answer:"5",choices:["4","5","9","13"],hint:"คำว่าเหลือ มักใช้การลบ",explain:"9 - 4 = 5"},
+  {id:13,level:"easy",topic:"part",text:"6 + ? = 10",small:"โปรดหาจำนวนที่หายไป",visual:"6 + ? = 10",answer:"4",choices:["3","4","6","10"],hint:"ใช้ 10 ลบ 6",explain:"10 - 6 = 4"},
+  {id:14,level:"easy",topic:"rank",text:"🐰 อยู่ลำดับที่เท่าไร",small:"นับจากซ้ายไปขวา",visual:"⭐ ⭐ 🐰 ⭐ ⭐",answer:"3",choices:["2","3","4","5"],hint:"นับจากซ้ายทีละตัว",explain:"🐰 อยู่ตัวที่ 3"},
+  {id:15,level:"easy",topic:"rank",text:"🚗 อยู่ลำดับที่เท่าไร",small:"นับจากซ้ายไปขวา",visual:"🚗 ⭐ ⭐ ⭐ ⭐",answer:"1",choices:["1","2","4","5"],hint:"ตัวแรกคือลำดับที่ 1",explain:"🚗 อยู่ลำดับที่ 1"},
+  {id:16,level:"easy",topic:"pattern",text:"เติมจำนวนที่หายไป 2, 4, 6, ?",small:"เพิ่มทีละ 2",visual:"2 → 4 → 6 → ?",answer:"8",choices:["7","8","9","10"],hint:"นับเพิ่มทีละ 2",explain:"2, 4, 6, 8"},
+  {id:17,level:"easy",topic:"pattern",text:"เติมจำนวนที่หายไป 5, 10, 15, ?",small:"เพิ่มทีละ 5",visual:"5 → 10 → 15 → ?",answer:"20",choices:["16","18","20","25"],hint:"นับเพิ่มทีละ 5",explain:"5, 10, 15, 20"},
+  {id:18,level:"easy",topic:"part",text:"10 - 7 = ?",small:"โปรดหาผลลบ",visual:"10 - 7",answer:"3",choices:["2","3","7","17"],hint:"นับถอยหลังจาก 10 ไป 7 ครั้ง",explain:"10 - 7 = 3"},
+  {id:19,level:"easy",topic:"part",text:"8 + 2 = ?",small:"โปรดหาผลบวก",visual:"8 + 2",answer:"10",choices:["6","8","10","12"],hint:"8 เพิ่มอีก 2 ได้ 10",explain:"8 + 2 = 10"},
+  {id:20,level:"easy",topic:"place",text:"จำนวนใดมากกว่า 16",small:"โปรดเลือกจำนวนที่มากกว่า 16",visual:"มากกว่า 16",answer:"18",choices:["12","15","16","18"],hint:"มากกว่า หมายถึงมีค่ามากกว่าเดิม",explain:"18 มากกว่า 16"},
+
+  {id:21,level:"medium",topic:"place",text:"จำนวน 47 มีหลักสิบกี่สิบ",small:"โปรดพิจารณาหลักสิบ",visual:"47",answer:"4",choices:["4","7","40","47"],hint:"ตัวเลขด้านซ้ายคือหลักสิบ",explain:"47 คือ 4 สิบ กับ 7 หน่วย"},
+  {id:22,level:"medium",topic:"place",text:"จำนวน 63 มีหลักหน่วยเท่าไร",small:"โปรดพิจารณาหลักหน่วย",visual:"63",answer:"3",choices:["3","6","30","60"],hint:"หลักหน่วยคือตัวเลขด้านขวาสุด",explain:"63 มีหลักหน่วยเป็น 3"},
+  {id:23,level:"medium",topic:"place",text:"5 สิบ กับ 8 หน่วย เขียนเป็นจำนวนใด",small:"โปรดรวมสิบและหน่วย",visual:"5 สิบ + 8 หน่วย",answer:"58",choices:["13","50","58","85"],hint:"5 สิบ คือ 50",explain:"50 + 8 = 58"},
+  {id:24,level:"medium",topic:"compare",text:"72 ? 68",small:"โปรดเลือกเครื่องหมายที่ถูกต้อง",visual:"72 ? 68",answer:">",choices:[">","<","=","≠"],hint:"เปรียบเทียบหลักสิบก่อน",explain:"72 มากกว่า 68"},
+  {id:25,level:"medium",topic:"compare",text:"45 ? 54",small:"โปรดเลือกเครื่องหมายที่ถูกต้อง",visual:"45 ? 54",answer:"<",choices:["<",">","=","≠"],hint:"4 สิบ น้อยกว่า 5 สิบ",explain:"45 < 54"},
+  {id:26,level:"medium",topic:"compare",text:"39 ? 39",small:"โปรดเลือกเครื่องหมายที่ถูกต้อง",visual:"39 ? 39",answer:"=",choices:["=",">","<","≠"],hint:"สองจำนวนเท่ากัน ใช้ =",explain:"39 = 39"},
+  {id:27,level:"medium",topic:"expand",text:"86 กระจายจำนวนได้อย่างไร",small:"โปรดแยกเป็นสิบและหน่วย",visual:"86 = ? + ?",answer:"80+6",choices:["80+6","8+6","60+8","86+0"],hint:"86 มี 8 สิบ และ 6 หน่วย",explain:"86 = 80 + 6"},
+  {id:28,level:"medium",topic:"expand",text:"70 + 4 = ?",small:"โปรดรวมจำนวน",visual:"70 + 4",answer:"74",choices:["47","70","74","704"],hint:"70 รวมกับ 4 ได้ 74",explain:"70 + 4 = 74"},
+  {id:29,level:"medium",topic:"order",text:"เรียงจำนวน 24  42  18  36",small:"จากน้อยไปมาก",visual:"24 42 18 36",answer:"18, 24, 36, 42",choices:["18, 24, 36, 42","42, 36, 24, 18","24, 18, 36, 42","18, 36, 24, 42"],hint:"เริ่มจากจำนวนที่น้อยที่สุด",explain:"18 < 24 < 36 < 42"},
+  {id:30,level:"medium",topic:"order",text:"เรียงจำนวน 91  77  86  69",small:"จากมากไปน้อย",visual:"91 77 86 69",answer:"91, 86, 77, 69",choices:["91, 86, 77, 69","69, 77, 86, 91","86, 91, 77, 69","91, 77, 86, 69"],hint:"เริ่มจากจำนวนที่มากที่สุด",explain:"91 > 86 > 77 > 69"},
+  {id:31,level:"medium",topic:"part",text:"23 + 15 = ?",small:"โปรดหาผลบวก",visual:"23 + 15",answer:"38",choices:["28","37","38","48"],hint:"บวกหลักหน่วยก่อน แล้วบวกหลักสิบ",explain:"23 + 15 = 38"},
+  {id:32,level:"medium",topic:"part",text:"48 - 16 = ?",small:"โปรดหาผลลบ",visual:"48 - 16",answer:"32",choices:["22","32","34","64"],hint:"ลบหลักหน่วยก่อน แล้วลบหลักสิบ",explain:"48 - 16 = 32"},
+  {id:33,level:"medium",topic:"part",text:"มีส้ม 25 ผล ซื้อเพิ่ม 12 ผล มีทั้งหมดกี่ผล",small:"โปรดนำมารวมกัน",visual:"25 + 12",answer:"37",choices:["13","35","37","47"],hint:"ซื้อเพิ่ม หมายถึงบวก",explain:"25 + 12 = 37"},
+  {id:34,level:"medium",topic:"part",text:"มีดินสอ 36 แท่ง ให้เพื่อนไป 14 แท่ง เหลือกี่แท่ง",small:"โปรดหาจำนวนที่เหลือ",visual:"36 - 14",answer:"22",choices:["20","22","24","50"],hint:"ให้ไปแล้วเหลือน้อยลง ใช้ลบ",explain:"36 - 14 = 22"},
+  {id:35,level:"medium",topic:"part",text:"29 + ? = 40",small:"โปรดหาจำนวนที่หายไป",visual:"29 + ? = 40",answer:"11",choices:["9","10","11","12"],hint:"ใช้ 40 ลบ 29",explain:"40 - 29 = 11"},
+  {id:36,level:"medium",topic:"rank",text:"🐸 อยู่ลำดับที่เท่าไร",small:"นับจากซ้ายไปขวา",visual:"⭐ ⭐ ⭐ 🐸 ⭐ ⭐ ⭐",answer:"4",choices:["3","4","5","7"],hint:"นับจากซ้ายไปขวา",explain:"🐸 อยู่ลำดับที่ 4"},
+  {id:37,level:"medium",topic:"rank",text:"🦊 อยู่ลำดับที่เท่าไร",small:"นับจากขวาไปซ้าย",visual:"⭐ 🦊 ⭐ ⭐ ⭐ ⭐",answer:"5",choices:["2","4","5","6"],hint:"เริ่มนับจากด้านขวา",explain:"นับจากขวาไปซ้าย 🦊 อยู่ลำดับที่ 5"},
+  {id:38,level:"medium",topic:"pattern",text:"เติมจำนวนที่หายไป 12, 22, 32, ?",small:"เพิ่มทีละ 10",visual:"12 → 22 → 32 → ?",answer:"42",choices:["34","40","42","52"],hint:"เพิ่มทีละ 10",explain:"12, 22, 32, 42"},
+  {id:39,level:"medium",topic:"pattern",text:"เติมจำนวนที่หายไป 90, 80, 70, ?",small:"ลดทีละ 10",visual:"90 → 80 → 70 → ?",answer:"60",choices:["50","60","70","100"],hint:"ลดทีละ 10",explain:"90, 80, 70, 60"},
+  {id:40,level:"medium",topic:"compare",text:"จำนวนใดน้อยที่สุด",small:"โปรดเลือกจำนวนที่น้อยที่สุด",visual:"56  65  49  74",answer:"49",choices:["56","65","49","74"],hint:"เปรียบเทียบหลักสิบก่อน",explain:"49 มี 4 สิบ จึงน้อยที่สุด"},
+  {id:41,level:"medium",topic:"compare",text:"จำนวนใดมากที่สุด",small:"โปรดเลือกจำนวนที่มากที่สุด",visual:"31  68  86  59",answer:"86",choices:["31","68","86","59"],hint:"เปรียบเทียบหลักสิบก่อน",explain:"86 มากที่สุด"},
+  {id:42,level:"medium",topic:"expand",text:"90 + 9 = ?",small:"โปรดรวมจำนวน",visual:"90 + 9",answer:"99",choices:["90","91","99","909"],hint:"90 รวมกับ 9",explain:"90 + 9 = 99"},
+  {id:43,level:"medium",topic:"place",text:"จำนวน 70 มีหลักหน่วยเท่าไร",small:"โปรดดูหลักหน่วย",visual:"70",answer:"0",choices:["0","7","10","70"],hint:"หลักหน่วยของ 70 คือ 0",explain:"70 คือ 7 สิบ กับ 0 หน่วย"},
+  {id:44,level:"medium",topic:"part",text:"54 - 20 = ?",small:"โปรดหาผลลบ",visual:"54 - 20",answer:"34",choices:["24","34","44","74"],hint:"ลบออก 2 สิบ",explain:"54 - 20 = 34"},
+  {id:45,level:"medium",topic:"part",text:"17 + 22 = ?",small:"โปรดหาผลบวก",visual:"17 + 22",answer:"39",choices:["29","38","39","49"],hint:"17 + 20 = 37 แล้วบวกอีก 2",explain:"17 + 22 = 39"},
+  {id:46,level:"medium",topic:"order",text:"เรียงจำนวน 60  16  61  06",small:"จากน้อยไปมาก",visual:"60 16 61 6",answer:"6, 16, 60, 61",choices:["6, 16, 60, 61","61, 60, 16, 6","16, 6, 60, 61","6, 60, 16, 61"],hint:"06 มีค่าเท่ากับ 6",explain:"6 < 16 < 60 < 61"},
+  {id:47,level:"medium",topic:"part",text:"มีลูกแก้ว 40 ลูก แบ่งให้เพื่อน 18 ลูก เหลือกี่ลูก",small:"โปรดลบเพื่อหาจำนวนที่เหลือ",visual:"40 - 18",answer:"22",choices:["20","21","22","28"],hint:"40 - 18",explain:"40 - 18 = 22"},
+  {id:48,level:"medium",topic:"pattern",text:"เติมจำนวนที่หายไป 3, 6, 9, 12, ?",small:"เพิ่มทีละ 3",visual:"3 → 6 → 9 → 12 → ?",answer:"15",choices:["13","14","15","16"],hint:"เพิ่มทีละ 3",explain:"3, 6, 9, 12, 15"},
+  {id:49,level:"medium",topic:"place",text:"จำนวนใดเท่ากับ 6 สิบ 2 หน่วย",small:"โปรดเลือกจำนวนที่ถูกต้อง",visual:"6 สิบ 2 หน่วย",answer:"62",choices:["26","60","62","620"],hint:"6 สิบ คือ 60 แล้วบวก 2",explain:"60 + 2 = 62"},
+  {id:50,level:"medium",topic:"compare",text:"84 มากกว่า 48 หรือไม่",small:"โปรดเลือกคำตอบ",visual:"84 กับ 48",answer:"ใช่",choices:["ใช่","ไม่ใช่","เท่ากัน","สรุปไม่ได้"],hint:"เปรียบเทียบหลักสิบ",explain:"84 มี 8 สิบ มากกว่า 48 ที่มี 4 สิบ"},
+  {id:51,level:"medium",topic:"part",text:"มีเงิน 75 บาท ใช้ไป 25 บาท เหลือเงินกี่บาท",small:"โปรดหาจำนวนเงินที่เหลือ",visual:"75 - 25",answer:"50",choices:["40","50","55","100"],hint:"ใช้ไปแล้วเงินลดลง",explain:"75 - 25 = 50"},
+  {id:52,level:"medium",topic:"part",text:"แม่มีไข่ 18 ฟอง ซื้อเพิ่ม 12 ฟอง รวมเป็นกี่ฟอง",small:"โปรดหาผลรวม",visual:"18 + 12",answer:"30",choices:["20","28","30","32"],hint:"ซื้อเพิ่มใช้การบวก",explain:"18 + 12 = 30"},
+  {id:53,level:"medium",topic:"rank",text:"🐶 อยู่ลำดับที่เท่าไร",small:"นับจากซ้ายไปขวา",visual:"⭐ ⭐ ⭐ ⭐ ⭐ 🐶 ⭐ ⭐",answer:"6",choices:["5","6","7","8"],hint:"นับจากซ้ายไปขวา",explain:"🐶 อยู่ลำดับที่ 6"},
+  {id:54,level:"medium",topic:"order",text:"เรียงจำนวน 99  9  90  19",small:"จากมากไปน้อย",visual:"99 9 90 19",answer:"99, 90, 19, 9",choices:["99, 90, 19, 9","9, 19, 90, 99","90, 99, 19, 9","99, 19, 90, 9"],hint:"จำนวนสองหลักมากกว่าจำนวนหลักเดียว",explain:"99 > 90 > 19 > 9"},
+  {id:55,level:"medium",topic:"expand",text:"จำนวนใดกระจายได้เป็น 40 + 7",small:"โปรดเลือกจำนวนที่ถูกต้อง",visual:"40 + 7",answer:"47",choices:["407","74","47","40"],hint:"40 รวมกับ 7",explain:"40 + 7 = 47"},
+  {id:56,level:"medium",topic:"pattern",text:"เติมจำนวนที่หายไป 25, 30, 35, ?",small:"เพิ่มทีละ 5",visual:"25 → 30 → 35 → ?",answer:"40",choices:["36","39","40","45"],hint:"เพิ่มทีละ 5",explain:"25, 30, 35, 40"},
+  {id:57,level:"medium",topic:"part",text:"64 + 5 = ?",small:"โปรดหาผลบวก",visual:"64 + 5",answer:"69",choices:["59","68","69","70"],hint:"เพิ่มจาก 64 อีก 5",explain:"64 + 5 = 69"},
+  {id:58,level:"medium",topic:"part",text:"82 - 7 = ?",small:"โปรดหาผลลบ",visual:"82 - 7",answer:"75",choices:["73","75","77","89"],hint:"นับถอยหลัง 7 จาก 82",explain:"82 - 7 = 75"},
+  {id:59,level:"medium",topic:"compare",text:"จำนวนใดอยู่ระหว่าง 30 และ 40",small:"โปรดเลือกคำตอบ",visual:"30 < ? < 40",answer:"36",choices:["29","30","36","42"],hint:"ต้องมากกว่า 30 และน้อยกว่า 40",explain:"36 อยู่ระหว่าง 30 และ 40"},
+  {id:60,level:"medium",topic:"place",text:"จำนวน 99 มีหลักสิบกี่สิบ",small:"โปรดดูหลักสิบ",visual:"99",answer:"9",choices:["0","9","90","99"],hint:"ตัวเลขด้านซ้ายคือหลักสิบ",explain:"99 คือ 9 สิบ กับ 9 หน่วย"},
+
+  {id:61,level:"hard",topic:"part",text:"37 + 28 = ?",small:"โปรดบวกทีละหลัก",visual:"37 + 28",answer:"65",choices:["55","64","65","75"],hint:"7 + 8 = 15 ต้องทด 1",explain:"37 + 28 = 65"},
+  {id:62,level:"hard",topic:"part",text:"74 - 36 = ?",small:"โปรดลบทีละหลัก",visual:"74 - 36",answer:"38",choices:["28","36","38","48"],hint:"หลักหน่วย 4 ลบ 6 ไม่พอ ต้องยืม",explain:"74 - 36 = 38"},
+  {id:63,level:"hard",topic:"part",text:"มีลูกบอล 45 ลูก ซื้อเพิ่ม 27 ลูก รวมเป็นกี่ลูก",small:"โปรดหาผลรวม",visual:"45 + 27",answer:"72",choices:["62","70","72","82"],hint:"45 + 20 = 65 แล้วบวกอีก 7",explain:"45 + 27 = 72"},
+  {id:64,level:"hard",topic:"part",text:"มีสมุด 83 เล่ม แจกไป 29 เล่ม เหลือกี่เล่ม",small:"โปรดหาจำนวนที่เหลือ",visual:"83 - 29",answer:"54",choices:["44","52","54","64"],hint:"83 - 30 = 53 แล้วบวกคืน 1",explain:"83 - 29 = 54"},
+  {id:65,level:"hard",topic:"part",text:"มิลินมีดาว 18 ดวง ได้เพิ่ม 25 ดวง แล้วให้เพื่อนไป 9 ดวง เหลือกี่ดวง",small:"โจทย์สองขั้น",visual:"18 + 25 - 9",answer:"34",choices:["32","34","43","52"],hint:"บวกก่อน แล้วจึงลบ",explain:"18 + 25 = 43 และ 43 - 9 = 34"},
+  {id:66,level:"hard",topic:"part",text:"มีขนม 60 ชิ้น แบ่งให้เพื่อน 24 ชิ้น แล้วซื้อเพิ่ม 15 ชิ้น ตอนนี้มีกี่ชิ้น",small:"โจทย์สองขั้น",visual:"60 - 24 + 15",answer:"51",choices:["36","45","51","99"],hint:"ลบก่อน แล้วบวกเพิ่ม",explain:"60 - 24 = 36 และ 36 + 15 = 51"},
+  {id:67,level:"hard",topic:"pattern",text:"เติมจำนวนที่หายไป 18, 28, 38, 48, ?",small:"แบบรูปเพิ่มทีละ 10",visual:"18 → 28 → 38 → 48 → ?",answer:"58",choices:["50","56","58","68"],hint:"เพิ่มทีละ 10",explain:"18, 28, 38, 48, 58"},
+  {id:68,level:"hard",topic:"pattern",text:"เติมจำนวนที่หายไป 96, 86, 76, ?",small:"แบบรูปลดทีละ 10",visual:"96 → 86 → 76 → ?",answer:"66",choices:["56","66","70","86"],hint:"ลดทีละ 10",explain:"96, 86, 76, 66"},
+  {id:69,level:"hard",topic:"pattern",text:"เติมจำนวนที่หายไป 7, 14, 21, ?",small:"เพิ่มทีละ 7",visual:"7 → 14 → 21 → ?",answer:"28",choices:["24","27","28","35"],hint:"เพิ่มทีละ 7",explain:"7, 14, 21, 28"},
+  {id:70,level:"hard",topic:"order",text:"เรียงจำนวน 105  95  150  115",small:"จากน้อยไปมาก",visual:"105 95 150 115",answer:"95, 105, 115, 150",choices:["95, 105, 115, 150","150, 115, 105, 95","105, 95, 115, 150","95, 115, 105, 150"],hint:"เปรียบเทียบหลักร้อยก่อน",explain:"95 < 105 < 115 < 150"},
+  {id:71,level:"hard",topic:"compare",text:"128 ? 182",small:"โปรดเลือกเครื่องหมายที่ถูกต้อง",visual:"128 ? 182",answer:"<",choices:["<",">","=","≠"],hint:"หลักร้อยเท่ากัน ดูหลักสิบ",explain:"128 < 182"},
+  {id:72,level:"hard",topic:"compare",text:"จำนวนใดมากที่สุด",small:"โปรดเลือกจำนวนที่มากที่สุด",visual:"89  109  98  120",answer:"120",choices:["89","109","98","120"],hint:"จำนวนที่มีหลักร้อยอาจมากกว่าจำนวนสองหลัก",explain:"120 มากที่สุด"},
+  {id:73,level:"hard",topic:"place",text:"จำนวน 143 มีหลักสิบเท่าไร",small:"โปรดดูหลักสิบ",visual:"143",answer:"4",choices:["1","3","4","40"],hint:"หลักสิบอยู่ตรงกลางของจำนวนสามหลัก",explain:"143 มี 4 อยู่ในหลักสิบ"},
+  {id:74,level:"hard",topic:"place",text:"1 ร้อย 2 สิบ 5 หน่วย เขียนเป็นจำนวนใด",small:"โปรดรวมร้อย สิบ และหน่วย",visual:"100 + 20 + 5",answer:"125",choices:["125","152","215","10025"],hint:"100 + 20 + 5",explain:"100 + 20 + 5 = 125"},
+  {id:75,level:"hard",topic:"expand",text:"156 กระจายจำนวนได้อย่างไร",small:"โปรดแยกเป็นร้อย สิบ และหน่วย",visual:"156 = ? + ? + ?",answer:"100+50+6",choices:["100+50+6","10+50+6","100+5+6","156+0+0"],hint:"ดูหลักร้อย หลักสิบ และหลักหน่วย",explain:"156 = 100 + 50 + 6"},
+  {id:76,level:"hard",topic:"expand",text:"100 + 30 + 8 = ?",small:"โปรดรวมจำนวน",visual:"100 + 30 + 8",answer:"138",choices:["138","183","1308","108"],hint:"รวมร้อย สิบ และหน่วย",explain:"100 + 30 + 8 = 138"},
+  {id:77,level:"hard",topic:"part",text:"46 + ? = 100",small:"โปรดหาจำนวนที่หายไป",visual:"46 + ? = 100",answer:"54",choices:["44","46","54","64"],hint:"ใช้ 100 ลบ 46",explain:"100 - 46 = 54"},
+  {id:78,level:"hard",topic:"part",text:"? - 18 = 35",small:"โปรดหาจำนวนเริ่มต้น",visual:"? - 18 = 35",answer:"53",choices:["17","43","53","63"],hint:"ใช้ 35 + 18",explain:"53 - 18 = 35"},
+  {id:79,level:"hard",topic:"part",text:"ร้านมีดินสอ 32 แท่ง ปากกา 28 ด้าม รวมทั้งหมดกี่ชิ้น",small:"โปรดหาผลรวม",visual:"32 + 28",answer:"60",choices:["50","58","60","70"],hint:"32 + 28",explain:"32 + 28 = 60"},
+  {id:80,level:"hard",topic:"part",text:"มีเงิน 100 บาท ซื้อของ 37 บาท เหลือเงินกี่บาท",small:"โปรดหาจำนวนเงินที่เหลือ",visual:"100 - 37",answer:"63",choices:["53","63","67","137"],hint:"100 - 37",explain:"100 - 37 = 63"},
+  {id:81,level:"hard",topic:"order",text:"เรียงจำนวน 120  102  112  121",small:"จากมากไปน้อย",visual:"120 102 112 121",answer:"121, 120, 112, 102",choices:["121, 120, 112, 102","102, 112, 120, 121","120, 121, 112, 102","121, 112, 120, 102"],hint:"เริ่มจากจำนวนที่มากที่สุด",explain:"121 > 120 > 112 > 102"},
+  {id:82,level:"hard",topic:"rank",text:"🦄 อยู่ลำดับที่เท่าไร",small:"นับจากขวาไปซ้าย",visual:"⭐ ⭐ 🦄 ⭐ ⭐ ⭐ ⭐ ⭐",answer:"6",choices:["3","5","6","8"],hint:"เริ่มนับจากด้านขวา",explain:"นับจากขวาไปซ้าย 🦄 อยู่ลำดับที่ 6"},
+  {id:83,level:"hard",topic:"rank",text:"🐼 อยู่ลำดับที่เท่าไร",small:"นับจากซ้ายไปขวา",visual:"⭐ ⭐ ⭐ ⭐ ⭐ ⭐ 🐼 ⭐ ⭐",answer:"7",choices:["6","7","8","9"],hint:"เริ่มนับจากซ้าย",explain:"🐼 อยู่ลำดับที่ 7"},
+  {id:84,level:"hard",topic:"pattern",text:"เติมจำนวนที่หายไป 100, 95, 90, 85, ?",small:"ลดทีละ 5",visual:"100 → 95 → 90 → 85 → ?",answer:"80",choices:["75","80","90","105"],hint:"ลดทีละ 5",explain:"100, 95, 90, 85, 80"},
+  {id:85,level:"hard",topic:"pattern",text:"เติมจำนวนที่หายไป 11, 22, 33, ?",small:"เพิ่มทีละ 11",visual:"11 → 22 → 33 → ?",answer:"44",choices:["34","40","44","55"],hint:"เพิ่มทีละ 11",explain:"11, 22, 33, 44"},
+  {id:86,level:"hard",topic:"compare",text:"จำนวนใดอยู่ระหว่าง 100 และ 120",small:"โปรดเลือกคำตอบ",visual:"100 < ? < 120",answer:"115",choices:["99","100","115","125"],hint:"ต้องมากกว่า 100 และน้อยกว่า 120",explain:"115 อยู่ระหว่าง 100 และ 120"},
+  {id:87,level:"hard",topic:"part",text:"27 + 36 = ?",small:"โปรดหาผลบวก",visual:"27 + 36",answer:"63",choices:["53","60","63","73"],hint:"7 + 6 = 13 ต้องทด 1",explain:"27 + 36 = 63"},
+  {id:88,level:"hard",topic:"part",text:"91 - 47 = ?",small:"โปรดหาผลลบ",visual:"91 - 47",answer:"44",choices:["34","44","46","54"],hint:"91 - 47",explain:"91 - 47 = 44"},
+  {id:89,level:"hard",topic:"part",text:"มีนักเรียน 24 คน มาเพิ่ม 18 คน แล้วกลับบ้าน 7 คน เหลือกี่คน",small:"โจทย์สองขั้น",visual:"24 + 18 - 7",answer:"35",choices:["33","35","42","49"],hint:"บวกก่อน แล้วลบ",explain:"24 + 18 = 42 และ 42 - 7 = 35"},
+  {id:90,level:"hard",topic:"part",text:"มีลูกโป่ง 55 ใบ แตกไป 16 ใบ แล้วซื้อเพิ่ม 20 ใบ ตอนนี้มีกี่ใบ",small:"โจทย์สองขั้น",visual:"55 - 16 + 20",answer:"59",choices:["39","55","59","91"],hint:"ลบก่อน แล้วบวก",explain:"55 - 16 = 39 และ 39 + 20 = 59"},
+  {id:91,level:"hard",topic:"place",text:"จำนวน 100 มีหลักร้อยกี่ร้อย",small:"โปรดพิจารณาหลักร้อย",visual:"100",answer:"1",choices:["0","1","10","100"],hint:"100 คือ 1 ร้อย",explain:"100 มี 1 ร้อย"},
+  {id:92,level:"hard",topic:"expand",text:"จำนวนใดกระจายได้เป็น 100 + 70 + 2",small:"โปรดรวมจำนวน",visual:"100 + 70 + 2",answer:"172",choices:["127","172","702","10072"],hint:"รวมร้อย สิบ และหน่วย",explain:"100 + 70 + 2 = 172"},
+  {id:93,level:"hard",topic:"compare",text:"154 ? 145",small:"โปรดเลือกเครื่องหมายที่ถูกต้อง",visual:"154 ? 145",answer:">",choices:[">","<","=","≠"],hint:"หลักร้อยเท่ากัน ดูหลักสิบ",explain:"154 > 145"},
+  {id:94,level:"hard",topic:"order",text:"เรียงจำนวน 75  157  107  99",small:"จากน้อยไปมาก",visual:"75 157 107 99",answer:"75, 99, 107, 157",choices:["75, 99, 107, 157","157, 107, 99, 75","99, 75, 107, 157","75, 107, 99, 157"],hint:"จำนวนสองหลักน้อยกว่าจำนวนสามหลัก",explain:"75 < 99 < 107 < 157"},
+  {id:95,level:"hard",topic:"part",text:"64 + 29 = ?",small:"โปรดหาผลบวก",visual:"64 + 29",answer:"93",choices:["83","90","93","103"],hint:"64 + 30 = 94 แล้วลบ 1",explain:"64 + 29 = 93"},
+  {id:96,level:"hard",topic:"part",text:"100 - 58 = ?",small:"โปรดหาผลลบ",visual:"100 - 58",answer:"42",choices:["32","40","42","48"],hint:"100 - 60 = 40 แล้วบวกคืน 2",explain:"100 - 58 = 42"},
+  {id:97,level:"hard",topic:"pattern",text:"เติมจำนวนที่หายไป 13, 23, 33, 43, ?",small:"เพิ่มทีละ 10",visual:"13 → 23 → 33 → 43 → ?",answer:"53",choices:["45","50","53","63"],hint:"เพิ่มทีละ 10",explain:"13, 23, 33, 43, 53"},
+  {id:98,level:"hard",topic:"part",text:"มีหนังสือ 72 เล่ม ชั้นแรกมี 38 เล่ม ชั้นที่สองมีที่เหลือกี่เล่ม",small:"โปรดหาส่วนที่เหลือ",visual:"72 - 38",answer:"34",choices:["24","34","36","110"],hint:"ทั้งหมดลบส่วนที่รู้แล้ว",explain:"72 - 38 = 34"},
+  {id:99,level:"hard",topic:"part",text:"48 + ? = 75",small:"โปรดหาจำนวนที่หายไป",visual:"48 + ? = 75",answer:"27",choices:["17","23","27","37"],hint:"ใช้ 75 ลบ 48",explain:"75 - 48 = 27"},
+  {id:100,level:"hard",topic:"compare",text:"จำนวนใดน้อยที่สุด",small:"โปรดเลือกจำนวนที่น้อยที่สุด",visual:"101  110  99  109",answer:"99",choices:["101","110","99","109"],hint:"99 เป็นจำนวนสองหลัก ส่วนที่เหลือเป็นสามหลัก",explain:"99 น้อยที่สุด"}
+];
+
+const topicNames = {
+  place:"จำนวนและค่าประจำหลัก",
+  compare:"การเปรียบเทียบจำนวน",
+  expand:"การกระจายจำนวน",
+  order:"การเรียงลำดับจำนวน",
+  part:"บวก ลบ และโจทย์ปัญหา",
+  rank:"การบอกอันดับ",
+  pattern:"แบบรูปของจำนวน"
+};
+const levelNames = {easy:"เริ่มต้น",medium:"เก่งขึ้น",hard:"ท้าทาย"};
+
+let selectedQuestions = [];
+let currentIndex = 0;
+let score = 0;
+let total = 20;
+let mode = "practice";
+let stats = {};
+let answered = false;
+
+function shuffle(arr){
+  return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]);
+}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function normalize(x){
+  return String(x).trim().replace(/\s/g,"").replace("＋","+").replace("＞",">").replace("＜","<");
+}
+function makeVisual(v){
+  if(!v) return "";
+  const emojiOnly = /^[⭐🔟🍭🐰🚗🦊🐼🐸🐥🐶🦄⚖️🐊\s+]+$/u.test(v);
+  if(emojiOnly){
+    return v.split(/\s+/).filter(Boolean).map(part=>{
+      if(part === "+") return `<span style="font-size:32px;font-weight:900">+</span>`;
+      return [...part].map(ch=>`<span class="obj">${ch}</span>`).join("");
+    }).join(" ");
+  }
+  return `<div style="font-size:clamp(32px,5vw,54px);font-weight:900;line-height:1.35">${v}</div>`;
+}
+function buildSet(count, mix){
+  const easy = questionBank.filter(q=>q.level==="easy");
+  const medium = questionBank.filter(q=>q.level==="medium");
+  const hard = questionBank.filter(q=>q.level==="hard");
+
+  let e,m,h;
+  if(mix === "exam"){ e=.45; m=.40; h=.15; }
+  else if(mix === "challenge"){ e=.20; m=.35; h=.45; }
+  else { e=.34; m=.33; h=.33; }
+
+  let easyCount = Math.round(count*e);
+  let mediumCount = Math.round(count*m);
+  let hardCount = count - easyCount - mediumCount;
+
+  let list = [
+    ...shuffle(easy).slice(0, Math.min(easyCount,easy.length)),
+    ...shuffle(medium).slice(0, Math.min(mediumCount,medium.length)),
+    ...shuffle(hard).slice(0, Math.min(hardCount,hard.length))
+  ];
+
+  if(list.length < count){
+    const used = new Set(list.map(q=>q.id));
+    const rest = shuffle(questionBank.filter(q=>!used.has(q.id))).slice(0,count-list.length);
+    list = [...list,...rest];
+  }
+  return shuffle(list).slice(0,count);
+}
+function startPreset(type){
+  const modeSelect = document.getElementById("modeSelect");
+  const countSelect = document.getElementById("countSelect");
+  const mixSelect = document.getElementById("mixSelect");
+  if(type === "rainbow"){
+    modeSelect.value = "practice";
+    countSelect.value = "20";
+    mixSelect.value = "exam";
+  }else if(type === "star"){
+    modeSelect.value = "practice";
+    countSelect.value = "30";
+    mixSelect.value = "balanced";
+  }else{
+    modeSelect.value = "exam";
+    countSelect.value = "50";
+    mixSelect.value = "challenge";
+  }
+  startGame();
+}
+function toggleCustom(){
+  const box = document.getElementById("customBox");
+  box.style.display = box.style.display === "block" ? "none" : "block";
+}
+function startGame(){
+  mode = document.getElementById("modeSelect").value;
+  total = Number(document.getElementById("countSelect").value);
+  const mix = document.getElementById("mixSelect").value;
+  selectedQuestions = buildSet(total, mix);
+  currentIndex = 0;
+  score = 0;
+  stats = {};
+  answered = false;
+  document.getElementById("home").style.display = "none";
+  document.getElementById("game").style.display = "block";
+  renderQuestion();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function startQuickPractice(){
+  startPreset("rainbow");
+}
+function goHome(){
+  document.getElementById("game").style.display = "none";
+  document.getElementById("home").style.display = "block";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function renderStars(){
+  const done = Math.max(1,currentIndex);
+  let star = currentIndex === 0 ? 0 : Math.round((score/done)*5);
+  star = Math.max(0,Math.min(5,star));
+  document.getElementById("stars").textContent = "★★★★★".slice(0,star) + "☆☆☆☆☆".slice(0,5-star);
+}
+function renderQuestion(){
+  answered = false;
+  const q = selectedQuestions[currentIndex];
+  document.getElementById("bar").style.width = `${currentIndex/total*100}%`;
+  document.getElementById("counter").textContent = `ข้อ ${currentIndex+1}/${total}`;
+  document.getElementById("levelLabel").textContent = levelNames[q.level];
+  document.getElementById("topicTag").textContent = `หัวข้อ ${topicNames[q.topic]}`;
+  document.getElementById("qText").textContent = q.text;
+  document.getElementById("qSmall").textContent = q.small;
+  document.getElementById("visual").innerHTML = makeVisual(q.visual);
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("explain").textContent = "";
+  document.getElementById("nextBox").style.display = "none";
+
+  const hintBox = document.getElementById("hintBox");
+  hintBox.textContent = mode === "practice" ? q.hint : "";
+  hintBox.style.display = mode === "practice" ? "block" : "none";
+
+  const choices = document.getElementById("choices");
+  const inputRow = document.getElementById("inputRow");
+  choices.innerHTML = "";
+
+  const useInput = mode === "exam" && q.level === "hard" && currentIndex % 3 === 0;
+  if(useInput){
+    choices.style.display = "none";
+    inputRow.style.display = "flex";
+    const input = document.getElementById("answerInput");
+    input.value = "";
+    setTimeout(()=>input.focus(),120);
+  }else{
+    inputRow.style.display = "none";
+    choices.style.display = "grid";
+    shuffle(q.choices).forEach(value=>{
+      const btn = document.createElement("button");
+      btn.className = "choice";
+      btn.textContent = value;
+      btn.onclick = ()=>answer(value,btn);
+      choices.appendChild(btn);
+    });
+  }
+  renderStars();
+}
+function submitInput(){
+  const val = document.getElementById("answerInput").value.trim();
+  if(val === "") return;
+  answer(val,null);
+}
+function answer(value, btn){
+  if(answered) return;
+  answered = true;
+  const q = selectedQuestions[currentIndex];
+  const ok = normalize(value) === normalize(q.answer);
+
+  stats[q.topic] = stats[q.topic] || {right:0,total:0};
+  stats[q.topic].total++;
+  if(ok){
+    score++;
+    stats[q.topic].right++;
+    makeConfetti();
+  }
+
+  if(btn){
+    document.querySelectorAll(".choice").forEach(b=>{
+      if(normalize(b.textContent) === normalize(q.answer)) b.classList.add("correct");
+      else if(b === btn && !ok) b.classList.add("wrong");
+      b.disabled = true;
+    });
+  }
+
+  const feedback = document.getElementById("feedback");
+  feedback.textContent = ok ? pick(["ถูกต้องค่ะ มิลินทำได้ดีมาก ⭐","ยอดเยี่ยมค่ะ คิดเป็นขั้นตอนมาก 🌈","เก่งมากค่ะ ได้ดาวเพิ่มแล้ว ✨","คำตอบถูกต้องค่ะ 🏆"]) : "ยังไม่ถูกค่ะ ไม่เป็นไร ลองดูวิธีคิดนี้นะคะ";
+  feedback.style.color = ok ? "var(--green2)" : "var(--red)";
+  document.getElementById("explain").textContent = (mode === "practice" || !ok) ? q.explain : "";
+  document.getElementById("nextBox").style.display = "flex";
+  document.getElementById("bar").style.width = `${(currentIndex+1)/total*100}%`;
+}
+function nextQuestion(){
+  currentIndex++;
+  if(currentIndex >= total) showResult();
+  else renderQuestion();
+}
+function showResult(){
+  document.getElementById("scoreNum").textContent = `${score}/${total}`;
+  const percent = score/total;
+  const medal = percent === 1 ? "ยอดเยี่ยมมากค่ะ ได้คะแนนเต็ม 👑" :
+                percent >= .9 ? "ใกล้คะแนนเต็มมากค่ะ ทบทวนอีกเล็กน้อย 🏆" :
+                percent >= .75 ? "ทำได้ดีค่ะ ฝึกซ้ำอีกครั้งจะมั่นใจขึ้น ⭐" :
+                "ไม่เป็นไรค่ะ ฝึกต่อทีละขั้น คะแนนจะดีขึ้น 🌱";
+  document.getElementById("medal").textContent = medal;
+
+  const report = document.getElementById("report");
+  report.innerHTML = "";
+  const weak = [];
+  Object.keys(topicNames).forEach(topic=>{
+    const st = stats[topic] || {right:0,total:0};
+    if(st.total && st.right < st.total) weak.push(topicNames[topic]);
+    const div = document.createElement("div");
+    div.innerHTML = `<b>${topicNames[topic]}</b><br>${st.right}/${st.total} ข้อ ${st.total && st.right < st.total ? '<span style="color:var(--red);font-weight:900">ควรฝึกเพิ่ม</span>' : '<span style="color:var(--green2);font-weight:900">ทำได้ดี</span>'}`;
+    report.appendChild(div);
+  });
+
+  let advice = "เริ่มภารกิจใหม่ได้ทันที เพื่อให้มิลินได้ฝึกหลายรูปแบบอย่างสนุกและมั่นใจ";
+  if(weak.length) advice += `<br><br><b>หัวข้อที่ควรฝึกซ้ำ</b><br>${weak.join(" · ")}`;
+  document.getElementById("advice").innerHTML = advice;
+
+  const history = JSON.parse(localStorage.getItem("milinMathBank100History") || "[]");
+  history.push({date:new Date().toLocaleString("th-TH"),score,total,mode});
+  localStorage.setItem("milinMathBank100History",JSON.stringify(history.slice(-30)));
+
+  document.getElementById("resultModal").style.display = "flex";
+}
+function closeResult(){
+  document.getElementById("resultModal").style.display = "none";
+}
+function makeConfetti(){
+  const marks = ["⭐","🌟","✨","🎈","💛"];
+  for(let i=0;i<12;i++){
+    const span = document.createElement("span");
+    span.className = "confetti";
+    span.textContent = pick(marks);
+    span.style.left = Math.floor(Math.random()*90+5) + "vw";
+    span.style.animationDelay = (Math.random()*.35) + "s";
+    document.body.appendChild(span);
+    setTimeout(()=>span.remove(),1900);
+  }
+}
+document.getElementById("answerInput").addEventListener("keydown",e=>{
+  if(e.key==="Enter") submitInput();
+});
+</script>
+</body>
+</html>
