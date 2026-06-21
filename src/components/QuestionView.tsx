@@ -6,7 +6,15 @@ import { playCorrect, playWrong } from '../lib/sound'
 import { fireConfetti } from '../lib/confetti'
 import { Visual } from './Visual'
 
-const PRAISE = ['ถูกต้องค่ะ เก่งมาก ⭐', 'ยอดเยี่ยมเลย 🌈', 'สุดยอด ได้ดาวเพิ่มแล้ว ✨', 'คำตอบถูกต้อง 🏆']
+const PRAISE = [
+  'ตอบถูกต้อง เก่งมาก ⭐',
+  'ถูกต้อง ทำได้ดีมาก 🌈',
+  'ตอบถูกต้อง ได้รับดาวเพิ่ม ✨',
+  'ถูกต้องครบถ้วน ยอดเยี่ยม 🏆',
+]
+
+/** ตอบถูกแล้วไปข้อถัดไปอัตโนมัติภายในกี่วินาที */
+const AUTO_ADVANCE_SECONDS = 5
 
 interface Props {
   question: Question
@@ -25,7 +33,12 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
   const [correct, setCorrect] = useState(false)
   const [chosen, setChosen] = useState<string | null>(null)
   const [inputVal, setInputVal] = useState('')
+  const [countdown, setCountdown] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // อ้างอิง onNext ล่าสุดเสมอ เพื่อให้ตัวจับเวลาเรียกค่าที่อัปเดตแล้ว
+  const onNextRef = useRef(onNext)
+  onNextRef.current = onNext
 
   // สลับตัวเลือกใหม่ทุกครั้งที่เปลี่ยนข้อ
   const choices = useMemo(
@@ -38,11 +51,28 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
     setCorrect(false)
     setChosen(null)
     setInputVal('')
+    setCountdown(null)
     if (question.kind === 'fill') {
       const t = setTimeout(() => inputRef.current?.focus(), 120)
       return () => clearTimeout(t)
     }
   }, [question.id])
+
+  // ตอบถูก → นับถอยหลังแล้วไปข้อถัดไปอัตโนมัติ (ตอบผิดให้กดเองเพื่ออ่านวิธีคิด)
+  // หมายเหตุ: ตัว updater ต้องบริสุทธิ์ (ไม่มี side effect) เพราะ StrictMode เรียกซ้ำ
+  useEffect(() => {
+    if (!answered || !correct) return
+    setCountdown(AUTO_ADVANCE_SECONDS)
+    const id = setInterval(() => {
+      setCountdown((c) => (c !== null && c > 0 ? c - 1 : 0))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [answered, correct])
+
+  // เมื่อนับถอยหลังถึง 0 จึงไปข้อถัดไป (แยกออกจาก updater เพื่อความถูกต้อง)
+  useEffect(() => {
+    if (countdown === 0) onNextRef.current()
+  }, [countdown])
 
   function submit(value: string) {
     if (answered) return
@@ -62,7 +92,7 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
   const feedback = answered
     ? correct
       ? pick(PRAISE)
-      : 'ยังไม่ถูกค่ะ ไม่เป็นไร ลองดูวิธีคิดนะคะ'
+      : 'ยังไม่ถูกต้อง ไม่เป็นไร ลองอ่านวิธีคิดด้านล่าง'
     : ''
 
   return (
@@ -123,9 +153,15 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
           )}
           <div className="btnRow" style={{ justifyContent: 'center' }}>
             <button className="green" onClick={onNext}>
-              {isLast ? 'ดูสรุปผล' : 'ไปข้อถัดไป'} →
+              {isLast ? 'ดูสรุปผล' : 'ไปข้อถัดไป'}
+              {countdown !== null && countdown > 0 ? ` (${countdown})` : ''} →
             </button>
           </div>
+          {correct && countdown !== null && countdown > 0 && (
+            <div className="mini" style={{ marginTop: 4 }}>
+              จะไปข้อถัดไปอัตโนมัติใน {countdown} วินาที (กดปุ่มเพื่อไปทันที)
+            </div>
+          )}
           <div className="mini" style={{ marginTop: 6 }}>ข้อ {index + 1} จาก {total}</div>
         </>
       )}

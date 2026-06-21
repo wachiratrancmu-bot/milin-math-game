@@ -45,11 +45,11 @@ export function Home({ onStart, onOpenParent }: Props) {
         <div className="card hero">
           <div className="mascotRow">
             <div className="mascot">🐰</div>
-            <div className="speech">พร้อมไหมคะ เลือกภารกิจแล้วมาเก็บดาวกันเลย!</div>
+            <div className="speech">เลือกภารกิจที่ต้องการ แล้วเริ่มเก็บดาวได้เลย</div>
           </div>
 
           <div className="heroTitle">วันนี้{settings.playerName}จะเก็บดาวได้กี่ดวง</div>
-          <p className="heroText">เลือกภารกิจที่ชอบแล้วเริ่มเล่นได้เลย ทุกข้อช่วยให้คิดเลขมั่นใจขึ้นทีละนิด</p>
+          <p className="heroText">เลือกภารกิจที่ต้องการแล้วเริ่มเล่นได้ทันที ทุกข้อช่วยฝึกให้คิดเลขได้อย่างมั่นใจขึ้น</p>
 
           <div className="missionGrid">
             {PRESETS.map((p) => (
