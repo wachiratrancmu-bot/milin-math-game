@@ -13,25 +13,34 @@ const PRAISE = [
   'ถูกต้องครบถ้วน ยอดเยี่ยม 🏆',
 ]
 
-/** ตอบถูกแล้วไปข้อถัดไปอัตโนมัติภายในกี่วินาที */
-const AUTO_ADVANCE_SECONDS = 10
-
-/** ตอบผิดได้กี่ครั้งก่อนเฉลย */
-const MAX_TRIES = 2
-
 interface Props {
   question: Question
   index: number
   total: number
   showHints: boolean
   sound: boolean
+  /** ตอบถูกแล้วไปข้อถัดไปอัตโนมัติภายในกี่วินาที */
+  autoAdvanceSeconds: number
+  /** ตอบผิดได้กี่ครั้งก่อนเฉลย */
+  maxTries: number
   /** เรียกครั้งเดียวเมื่อสรุปผลข้อนั้น พร้อมผลถูก/ผิดสุดท้าย */
   onAnswered: (correct: boolean) => void
   onNext: () => void
   isLast: boolean
 }
 
-export function QuestionView({ question, index, total, showHints, sound, onAnswered, onNext, isLast }: Props) {
+export function QuestionView({
+  question,
+  index,
+  total,
+  showHints,
+  sound,
+  autoAdvanceSeconds,
+  maxTries,
+  onAnswered,
+  onNext,
+  isLast,
+}: Props) {
   const [locked, setLocked] = useState(false) // สรุปผลแล้ว (ตอบถูก หรือ ผิดครบ 2 ครั้ง)
   const [correct, setCorrect] = useState(false)
   const [wrongTries, setWrongTries] = useState(0)
@@ -46,11 +55,8 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
   const onNextRef = useRef(onNext)
   onNextRef.current = onNext
 
-  // สลับตัวเลือกใหม่ทุกครั้งที่เปลี่ยนข้อ
-  const choices = useMemo(
-    () => (question.choices ? shuffle(question.choices) : []),
-    [question.id],
-  )
+  // สลับตัวเลือกใหม่ทุกครั้งที่เปลี่ยนข้อ (question คงที่ต่อหนึ่งข้อ)
+  const choices = useMemo(() => (question.choices ? shuffle(question.choices) : []), [question])
 
   // รีเซ็ตสถานะทั้งหมดเมื่อเปลี่ยนข้อ
   useEffect(() => {
@@ -66,18 +72,18 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
       const t = setTimeout(() => inputRef.current?.focus(), 120)
       return () => clearTimeout(t)
     }
-  }, [question.id])
+  }, [question])
 
   // ตอบถูก → นับถอยหลังแล้วไปข้อถัดไปอัตโนมัติ
   // หมายเหตุ: ตัว updater ต้องบริสุทธิ์ (ไม่มี side effect) เพราะ StrictMode เรียกซ้ำ
   useEffect(() => {
     if (!locked || !correct) return
-    setCountdown(AUTO_ADVANCE_SECONDS)
+    setCountdown(autoAdvanceSeconds)
     const id = setInterval(() => {
       setCountdown((c) => (c !== null && c > 0 ? c - 1 : 0))
     }, 1000)
     return () => clearInterval(id)
-  }, [locked, correct])
+  }, [locked, correct, autoAdvanceSeconds])
 
   // เมื่อนับถอยหลังถึง 0 จึงไปข้อถัดไป (แยกออกจาก updater เพื่อความถูกต้อง)
   useEffect(() => {
@@ -106,7 +112,7 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
     setChosen(value)
     if (question.kind === 'choice') setWrongChoices((w) => [...w, value])
 
-    if (tries < MAX_TRIES) {
+    if (tries < maxTries) {
       // ผิดครั้งแรก → ยังไม่เฉลย ให้ลองอีกครั้ง
       setFeedbackMsg('ยังไม่ถูกต้อง ลองอีกครั้งนะ')
       if (question.kind === 'fill') {
@@ -164,7 +170,11 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
             }}
           />
           {!locked && (
-            <button className="primary" disabled={inputVal.trim() === ''} onClick={() => submit(inputVal)}>
+            <button
+              className="primary"
+              disabled={inputVal.trim() === ''}
+              onClick={() => submit(inputVal)}
+            >
               ส่งคำตอบ
             </button>
           )}
@@ -181,7 +191,9 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
 
       {/* ผิดครั้งแรก: ยังไม่เฉลย บอกให้ลองอีกครั้ง */}
       {!locked && wrongTries > 0 && (
-        <div className="mini" style={{ marginTop: 2 }}>เหลือโอกาสอีก {MAX_TRIES - wrongTries} ครั้ง</div>
+        <div className="mini" style={{ marginTop: 2 }}>
+          เหลือโอกาสอีก {maxTries - wrongTries} ครั้ง
+        </div>
       )}
 
       {locked && (
@@ -200,7 +212,9 @@ export function QuestionView({ question, index, total, showHints, sound, onAnswe
               จะไปข้อถัดไปอัตโนมัติใน {countdown} วินาที (กดปุ่มเพื่อไปทันที)
             </div>
           )}
-          <div className="mini" style={{ marginTop: 6 }}>ข้อ {index + 1} จาก {total}</div>
+          <div className="mini" style={{ marginTop: 6 }}>
+            ข้อ {index + 1} จาก {total}
+          </div>
         </>
       )}
     </section>

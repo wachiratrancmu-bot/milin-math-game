@@ -1,15 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { Progress, RoundResult, Mode } from '../types'
+import type { Progress, RoundResult } from '../types'
 import { DEFAULT_PROGRESS, loadProgress, saveProgress } from '../lib/storage'
+import { applyRound, type RoundInput } from '../lib/rewards'
 import { useSettings } from './SettingsContext'
 
-export interface RoundSummary {
-  score: number
-  total: number
-  mode: Mode
-  perTopic: Record<string, { right: number; total: number }>
-  maxStreak: number
-}
+export type RoundSummary = RoundInput
 
 interface ProgressCtx {
   progress: Progress
@@ -33,40 +28,9 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   }, [progress])
 
   const finishRound = (s: RoundSummary): RoundResult => {
-    const threshold = Math.max(1, settings.rewardThreshold)
-    const perfect = s.total > 0 && s.score === s.total
-    const bonus = perfect ? settings.fullMarksBonus : 0
-    const starsGained = s.score + bonus
-
-    let starBalance = progress.starBalance + starsGained
-    let newTickets = 0
-    while (starBalance >= threshold) {
-      starBalance -= threshold
-      newTickets++
-    }
-
-    const next: Progress = {
-      totalCorrect: progress.totalCorrect + s.score,
-      starBalance,
-      ticketsEarned: progress.ticketsEarned + newTickets,
-      ticketsRedeemed: progress.ticketsRedeemed,
-      bestStreak: Math.max(progress.bestStreak, s.maxStreak),
-      perfectRounds: progress.perfectRounds + (perfect ? 1 : 0),
-      history: [
-        { date: new Date().toLocaleString('th-TH'), score: s.score, total: s.total, mode: s.mode },
-        ...progress.history,
-      ].slice(0, 30),
-    }
+    const { next, result } = applyRound(progress, settings, s, new Date().toLocaleString('th-TH'))
     setProgress(next)
-
-    return {
-      score: s.score,
-      total: s.total,
-      mode: s.mode,
-      perTopic: s.perTopic,
-      starsGained,
-      newTickets,
-    }
+    return result
   }
 
   const redeemTicket = () =>

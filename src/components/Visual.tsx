@@ -11,10 +11,22 @@ export function Visual({ visual }: { visual?: string }) {
     return (
       <div className="visual">
         {parts.map((part, i) => {
-          if (part === '+') return <span key={i} style={{ fontSize: 32, fontWeight: 900 }}>+</span>
-          if (part === '·') return <span key={i} style={{ opacity: 0.4 }}>·</span>
+          if (part === '+')
+            return (
+              <span key={i} style={{ fontSize: 32, fontWeight: 900 }}>
+                +
+              </span>
+            )
+          if (part === '·')
+            return (
+              <span key={i} style={{ opacity: 0.4 }}>
+                ·
+              </span>
+            )
           return [...part].map((ch, j) => (
-            <span key={`${i}-${j}`} className="obj">{ch}</span>
+            <span key={`${i}-${j}`} className="obj">
+              {ch}
+            </span>
           ))
         })}
       </div>

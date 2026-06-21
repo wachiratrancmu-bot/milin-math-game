@@ -8,10 +8,38 @@ interface Props {
   onOpenParent: () => void
 }
 
-const PRESETS: { key: string; icon: string; title: string; desc: string; cls: string; patch: Partial<Settings> }[] = [
-  { key: 'rainbow', icon: '🌈', title: 'ภารกิจสายรุ้ง', desc: 'เริ่มแบบสบาย ๆ มีคำใบ้ช่วยทุกข้อ', cls: 'secondary', patch: { mode: 'practice', mix: 'warmup' } },
-  { key: 'star', icon: '⭐', title: 'ภารกิจดวงดาว', desc: 'ฝึกจริงจังขึ้น เพื่อเก็บดาวให้มากกว่าเดิม', cls: 'primary', patch: { mode: 'practice', mix: 'balanced' } },
-  { key: 'crown', icon: '👑', title: 'ภารกิจมงกุฎ', desc: 'ท้าทายแบบทดสอบ พร้อมเป็นแชมป์คณิต', cls: 'green', patch: { mode: 'exam', mix: 'challenge' } },
+const PRESETS: {
+  key: string
+  icon: string
+  title: string
+  desc: string
+  cls: string
+  patch: Partial<Settings>
+}[] = [
+  {
+    key: 'rainbow',
+    icon: '🌈',
+    title: 'ภารกิจสายรุ้ง',
+    desc: 'เริ่มแบบสบาย ๆ มีคำใบ้ช่วยทุกข้อ',
+    cls: 'secondary',
+    patch: { mode: 'practice', mix: 'warmup' },
+  },
+  {
+    key: 'star',
+    icon: '⭐',
+    title: 'ภารกิจดวงดาว',
+    desc: 'ฝึกจริงจังขึ้น เพื่อเก็บดาวให้มากกว่าเดิม',
+    cls: 'primary',
+    patch: { mode: 'practice', mix: 'balanced' },
+  },
+  {
+    key: 'crown',
+    icon: '👑',
+    title: 'ภารกิจมงกุฎ',
+    desc: 'ท้าทายแบบทดสอบ พร้อมเป็นแชมป์คณิต',
+    cls: 'green',
+    patch: { mode: 'exam', mix: 'challenge' },
+  },
 ]
 
 export function Home({ onStart, onOpenParent }: Props) {
@@ -37,7 +65,9 @@ export function Home({ onStart, onOpenParent }: Props) {
               {settings.rewardEmoji} รางวัลรอรับ {pendingTickets}
             </div>
           )}
-          <button className="ghost smallBtn" onClick={onOpenParent}>👨‍👩‍👧 ตั้งค่าผู้ปกครอง</button>
+          <button className="ghost smallBtn" onClick={onOpenParent}>
+            👨‍👩‍👧 ตั้งค่าผู้ปกครอง
+          </button>
         </div>
       </header>
 
@@ -49,7 +79,9 @@ export function Home({ onStart, onOpenParent }: Props) {
           </div>
 
           <div className="heroTitle">วันนี้{settings.playerName}จะเก็บดาวได้กี่ดวง</div>
-          <p className="heroText">เลือกภารกิจที่ต้องการแล้วเริ่มเล่นได้ทันที ทุกข้อช่วยฝึกให้คิดเลขได้อย่างมั่นใจขึ้น</p>
+          <p className="heroText">
+            เลือกภารกิจที่ต้องการแล้วเริ่มเล่นได้ทันที ทุกข้อช่วยฝึกให้คิดเลขได้อย่างมั่นใจขึ้น
+          </p>
 
           <div className="missionGrid">
             {PRESETS.map((p) => (
@@ -59,13 +91,17 @@ export function Home({ onStart, onOpenParent }: Props) {
                   <b>{p.title}</b>
                   <span>{p.desc}</span>
                 </div>
-                <button className={`${p.cls} smallBtn`} onClick={() => onStart(p.patch)}>เริ่มภารกิจ</button>
+                <button className={`${p.cls} smallBtn`} onClick={() => onStart(p.patch)}>
+                  เริ่มภารกิจ
+                </button>
               </div>
             ))}
           </div>
 
           <div className="btnRow">
-            <button className="primary" onClick={() => onStart()}>▶ เริ่มเล่นด้วยค่าที่ตั้งไว้</button>
+            <button className="primary" onClick={() => onStart()}>
+              ▶ เริ่มเล่นด้วยค่าที่ตั้งไว้
+            </button>
           </div>
         </div>
 
@@ -78,13 +114,27 @@ export function Home({ onStart, onOpenParent }: Props) {
           <div className="rewardProgress">
             <div className="rewardProgressInner" style={{ width: `${pct}%` }} />
           </div>
-          <div className="mini">{progress.starBalance} / {settings.rewardThreshold} ดวง</div>
+          <div className="mini">
+            {progress.starBalance} / {settings.rewardThreshold} ดวง
+          </div>
 
           <div className="statRow">
-            <div className="statBox"><div className="num">{progress.totalCorrect}</div><span>ตอบถูกสะสม</span></div>
-            <div className="statBox"><div className="num">{progress.ticketsEarned}</div><span>รางวัลที่ได้</span></div>
-            <div className="statBox"><div className="num">{progress.bestStreak}</div><span>ตอบถูกติดกันสูงสุด</span></div>
-            <div className="statBox"><div className="num">{progress.perfectRounds}</div><span>รอบที่ทำเต็ม</span></div>
+            <div className="statBox">
+              <div className="num">{progress.totalCorrect}</div>
+              <span>ตอบถูกสะสม</span>
+            </div>
+            <div className="statBox">
+              <div className="num">{progress.ticketsEarned}</div>
+              <span>รางวัลที่ได้</span>
+            </div>
+            <div className="statBox">
+              <div className="num">{progress.bestStreak}</div>
+              <span>ตอบถูกติดกันสูงสุด</span>
+            </div>
+            <div className="statBox">
+              <div className="num">{progress.perfectRounds}</div>
+              <span>รอบที่ทำเต็ม</span>
+            </div>
           </div>
 
           <div className="topicList">
@@ -92,7 +142,9 @@ export function Home({ onStart, onOpenParent }: Props) {
             {settings.enabledTopics.map((t) => (
               <div className="topic" key={t}>
                 <div className="topicIcon">{TOPIC_ICONS[t]}</div>
-                <div><b>{TOPIC_NAMES[t]}</b></div>
+                <div>
+                  <b>{TOPIC_NAMES[t]}</b>
+                </div>
               </div>
             ))}
           </div>

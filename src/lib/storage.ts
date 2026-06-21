@@ -16,6 +16,8 @@ export const DEFAULT_SETTINGS: Settings = {
   enabledTopics: Object.keys(EXAM_BLUEPRINT) as Settings['enabledTopics'],
   showHints: true,
   sound: true,
+  autoAdvanceSeconds: 10,
+  maxTries: 2,
   rewardThreshold: 30,
   fullMarksBonus: 5,
   rewardName: 'ไอติม',

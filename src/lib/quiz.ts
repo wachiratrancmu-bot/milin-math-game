@@ -56,10 +56,7 @@ export function buildRound(settings: Settings): Question[] {
   const ratio = MIX_RATIO[settings.mix]
 
   // จัดโควตาต่อหัวข้อตามน้ำหนักใบสอบ (เฉพาะหัวข้อที่เปิด)
-  const totalWeight = settings.enabledTopics.reduce(
-    (sum, t) => sum + (EXAM_BLUEPRINT[t] ?? 1),
-    0,
-  )
+  const totalWeight = settings.enabledTopics.reduce((sum, t) => sum + (EXAM_BLUEPRINT[t] ?? 1), 0)
 
   const selected: Question[] = []
   const used = new Set<string>()

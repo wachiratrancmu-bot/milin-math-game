@@ -15,10 +15,13 @@ export function ResultModal({ result, onReplay, onHome }: Props) {
   const percent = result.total > 0 ? result.score / result.total : 0
 
   const medal =
-    percent === 1 ? 'ยอดเยี่ยมมาก ทำคะแนนได้เต็ม 👑' :
-    percent >= 0.9 ? 'เกือบเต็มแล้ว ทำได้ดีมาก 🏆' :
-    percent >= 0.75 ? 'ทำได้ดี ฝึกเพิ่มอีกเล็กน้อยจะมั่นใจขึ้น ⭐' :
-    'ไม่เป็นไร ค่อย ๆ ฝึกฝน คะแนนจะดีขึ้นแน่นอน 🌱'
+    percent === 1
+      ? 'ยอดเยี่ยมมาก ทำคะแนนได้เต็ม 👑'
+      : percent >= 0.9
+        ? 'เกือบเต็มแล้ว ทำได้ดีมาก 🏆'
+        : percent >= 0.75
+          ? 'ทำได้ดี ฝึกเพิ่มอีกเล็กน้อยจะมั่นใจขึ้น ⭐'
+          : 'ไม่เป็นไร ค่อย ๆ ฝึกฝน คะแนนจะดีขึ้นแน่นอน 🌱'
 
   const weak = Object.entries(result.perTopic)
     .filter(([, v]) => v.total > 0 && v.right < v.total)
@@ -30,7 +33,9 @@ export function ResultModal({ result, onReplay, onHome }: Props) {
     <div className="overlay">
       <div className="modal">
         <h2 style={{ margin: '0 0 4px' }}>สรุปผลของ{settings.playerName}</h2>
-        <div className="scoreNum">{result.score}/{result.total}</div>
+        <div className="scoreNum">
+          {result.score}/{result.total}
+        </div>
         <div className="medal">{medal}</div>
 
         <div className="note" style={{ textAlign: 'center' }}>
@@ -65,8 +70,12 @@ export function ResultModal({ result, onReplay, onHome }: Props) {
         )}
 
         <div className="btnRow" style={{ justifyContent: 'center' }}>
-          <button className="primary" onClick={onReplay}>เล่นอีกรอบ</button>
-          <button className="ghost" onClick={onHome}>กลับหน้าแรก</button>
+          <button className="primary" onClick={onReplay}>
+            เล่นอีกรอบ
+          </button>
+          <button className="ghost" onClick={onHome}>
+            กลับหน้าแรก
+          </button>
         </div>
       </div>
     </div>

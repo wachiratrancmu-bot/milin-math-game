@@ -24,6 +24,8 @@ export function Game({ questions, mode, onHome, onReplay }: Props) {
   const [perTopic, setPerTopic] = useState<Record<string, { right: number; total: number }>>({})
   const [result, setResult] = useState<RoundResult | null>(null)
   const [showReward, setShowReward] = useState(false)
+  // กันสรุปผลซ้ำ หากตัวจับเวลากับการกดปุ่มยิงพร้อมกัน
+  const finishedRef = useRef(false)
 
   const total = questions.length
   const current = questions[index]
@@ -52,6 +54,8 @@ export function Game({ questions, mode, onHome, onReplay }: Props) {
 
   function handleNext() {
     if (index + 1 >= total) {
+      if (finishedRef.current) return // กันเรียกซ้ำ
+      finishedRef.current = true
       const r = finishRound({ score, total, mode, perTopic, maxStreak })
       setResult(r)
       if (r.newTickets > 0) setShowReward(true)
@@ -65,11 +69,18 @@ export function Game({ questions, mode, onHome, onReplay }: Props) {
     <main>
       <section className="card">
         <div className="gameTop">
-          <button className="ghost smallBtn" onClick={onHome}>← กลับหน้าแรก</button>
+          <button className="ghost smallBtn" onClick={onHome}>
+            ← กลับหน้าแรก
+          </button>
           <div className="progressOuter">
-            <div className="progressInner" style={{ width: `${((index + (result ? 1 : 0)) / total) * 100}%` }} />
+            <div
+              className="progressInner"
+              style={{ width: `${((index + (result ? 1 : 0)) / total) * 100}%` }}
+            />
           </div>
-          <div className="pill">ข้อ {Math.min(index + 1, total)}/{total}</div>
+          <div className="pill">
+            ข้อ {Math.min(index + 1, total)}/{total}
+          </div>
           <div className="pill hideMobile">{mode === 'practice' ? 'โหมดฝึก' : 'โหมดสอบ'}</div>
           <div className="stars">{starsDisplay}</div>
         </div>
@@ -83,25 +94,18 @@ export function Game({ questions, mode, onHome, onReplay }: Props) {
           total={total}
           showHints={settings.showHints && mode === 'practice'}
           sound={settings.sound}
+          autoAdvanceSeconds={settings.autoAdvanceSeconds}
+          maxTries={settings.maxTries}
           onAnswered={handleAnswered}
           onNext={handleNext}
           isLast={index + 1 >= total}
         />
       )}
 
-      {result && !showReward && (
-        <ResultModal
-          result={result}
-          onReplay={onReplay}
-          onHome={onHome}
-        />
-      )}
+      {result && !showReward && <ResultModal result={result} onReplay={onReplay} onHome={onHome} />}
 
       {result && showReward && (
-        <RewardModal
-          count={result.newTickets}
-          onClose={() => setShowReward(false)}
-        />
+        <RewardModal count={result.newTickets} onClose={() => setShowReward(false)} />
       )}
     </main>
   )
