@@ -39,10 +39,10 @@ export function ResultModal({ result, onReplay, onHome }: Props) {
         <div className="medal">{medal}</div>
 
         <div className="note" style={{ textAlign: 'center' }}>
-          ได้ดาวรอบนี้ <b>+{result.starsGained}</b> ดวง ⭐
-          {result.starsGained > result.score && <> (รวมโบนัสทำเต็ม!)</>}
+          ได้รับดาวรอบนี้ <b>+{result.starsGained}</b> ดวง ⭐
+          {result.starsGained > result.score && <> (รวมดาวโบนัสจากการทำคะแนนเต็ม)</>}
           <br />
-          เหลืออีก <b>{toNext}</b> ดวง ก็จะได้ {settings.rewardEmoji} {settings.rewardName}
+          อีก <b>{toNext}</b> ดวง จะได้รับ {settings.rewardEmoji} {settings.rewardName}
         </div>
 
         <div className="report">

@@ -109,7 +109,7 @@ export function Home({ onStart, onOpenParent }: Props) {
           <h2 style={{ margin: '0 0 4px' }}>กล่องเก็บดาว</h2>
           <div className="rewardBig">{settings.rewardEmoji}</div>
           <b style={{ fontSize: 18 }}>
-            เหลืออีก {toNext} ดวง ได้ {settings.rewardName}!
+            อีก {toNext} ดวง จะได้รับ{settings.rewardName}
           </b>
           <div className="rewardProgress">
             <div className="rewardProgressInner" style={{ width: `${pct}%` }} />

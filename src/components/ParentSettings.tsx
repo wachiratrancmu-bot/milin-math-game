@@ -5,7 +5,22 @@ import { useProgress } from '../state/ProgressContext'
 import { TOPIC_NAMES } from '../data/questions'
 
 const ALL_TOPICS = Object.keys(TOPIC_NAMES) as Topic[]
-const EMOJIS = ['🍦', '🍬', '🍭', '🍫', '🍪', '🧁', '🍩', '🎁', '⭐', '🧸', '🎈', '🍓']
+
+// ชุดรางวัลสำเร็จรูป — เลือกครั้งเดียวได้ทั้งสัญลักษณ์และชื่อพร้อมกัน
+const REWARD_PRESETS: { emoji: string; name: string }[] = [
+  { emoji: '🍦', name: 'ไอศกรีม' },
+  { emoji: '🍬', name: 'ลูกอม' },
+  { emoji: '🍭', name: 'อมยิ้ม' },
+  { emoji: '🍫', name: 'ช็อกโกแลต' },
+  { emoji: '🍪', name: 'คุกกี้' },
+  { emoji: '🧁', name: 'คัพเค้ก' },
+  { emoji: '🍩', name: 'โดนัท' },
+  { emoji: '🧸', name: 'ตุ๊กตา' },
+  { emoji: '🎈', name: 'ลูกโป่ง' },
+  { emoji: '🎁', name: 'ของขวัญ' },
+  { emoji: '⭐', name: 'ดาวพิเศษ' },
+  { emoji: '🍓', name: 'สตรอว์เบอร์รี' },
+]
 
 export function ParentSettings({ onClose }: { onClose: () => void }) {
   const { settings, update, reset } = useSettings()
@@ -91,25 +106,28 @@ export function ParentSettings({ onClose }: { onClose: () => void }) {
         <div className="sectionLabel">ปรับระบบรางวัล</div>
         <div className="formGrid">
           <div className="field">
-            <label>ชื่อรางวัล</label>
+            <label>เลือกรางวัล (รูปและชื่อจะเปลี่ยนพร้อมกัน)</label>
+            <div className="chips">
+              {REWARD_PRESETS.map((r) => (
+                <button
+                  key={r.emoji}
+                  className={`chip ${settings.rewardEmoji === r.emoji && settings.rewardName === r.name ? 'on' : ''}`}
+                  onClick={() => update({ rewardEmoji: r.emoji, rewardName: r.name })}
+                >
+                  {r.emoji} {r.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="field">
+            <label>หรือกำหนดชื่อรางวัลเอง</label>
             <input
               value={settings.rewardName}
               onChange={(e) => update({ rewardName: e.target.value })}
+              placeholder="เช่น ไปสวนสนุก"
             />
-          </div>
-          <div className="field">
-            <label>เลือกสัญลักษณ์รางวัล</label>
-            <div className="chips">
-              {EMOJIS.map((e) => (
-                <button
-                  key={e}
-                  className={`chip ${settings.rewardEmoji === e ? 'on' : ''}`}
-                  style={{ fontSize: 22 }}
-                  onClick={() => update({ rewardEmoji: e })}
-                >
-                  {e}
-                </button>
-              ))}
+            <div className="mini">
+              รางวัลปัจจุบัน: {settings.rewardEmoji} {settings.rewardName}
             </div>
           </div>
           <div className="field">

@@ -20,7 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maxTries: 2,
   rewardThreshold: 30,
   fullMarksBonus: 5,
-  rewardName: 'ไอติม',
+  rewardName: 'ไอศกรีม',
   rewardEmoji: '🍦',
   playerName: 'มิลิน',
   customQuestions: [],
