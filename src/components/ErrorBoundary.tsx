@@ -28,28 +28,26 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="app">
-          <div className="card" style={{ textAlign: 'center', maxWidth: 520, margin: '40px auto' }}>
-            <div style={{ fontSize: 64 }}>🛠️</div>
-            <h2>ขออภัย เกมสะดุดเล็กน้อย</h2>
-            <p style={{ color: 'var(--soft)', lineHeight: 1.6 }}>
-              ลองกดปุ่มด้านล่างเพื่อเริ่มใหม่ ความคืบหน้าและดาวสะสมยังอยู่ครบ
+        <main className="screen">
+          <section className="card errorCard" role="alert">
+            <div className="errorIcon" aria-hidden="true">
+              🛠️
+            </div>
+            <h1 className="sectionTitle">ขออภัย ระบบขัดข้องเล็กน้อย</h1>
+            <p className="sectionHint">
+              กดปุ่ม “เริ่มใหม่” เพื่อโหลดหน้าอีกครั้ง ดาวสะสมและความคืบหน้ายังอยู่ครบ
             </p>
-            <div className="btnRow" style={{ justifyContent: 'center' }}>
-              <button className="primary" onClick={() => window.location.reload()}>
+            <div className="actions">
+              <button className="btn btnPrimary btnLarge" onClick={() => window.location.reload()}>
                 เริ่มใหม่
               </button>
-              <button className="ghost" onClick={this.handleReset}>
-                ลองต่อ
+              <button className="btn btnGhost btnLarge" onClick={this.handleReset}>
+                ลองทำต่อ
               </button>
             </div>
-            {this.state.message && (
-              <div className="mini" style={{ marginTop: 10 }}>
-                ({this.state.message})
-              </div>
-            )}
-          </div>
-        </div>
+            {this.state.message && <p className="muted">({this.state.message})</p>}
+          </section>
+        </main>
       )
     }
     return this.props.children

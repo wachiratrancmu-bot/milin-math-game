@@ -37,6 +37,9 @@ export function applyRound(
   }
 
   const next: Progress = {
+    ...progress,
+    // นับรอบที่เล่นจบ ใช้เว้นระยะการทบทวนข้อที่ผิด
+    rounds: progress.rounds + 1,
     totalCorrect: progress.totalCorrect + s.score,
     starBalance,
     ticketsEarned: progress.ticketsEarned + newTickets,

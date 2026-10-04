@@ -1,5 +1,6 @@
-import type { Chapter, Question, Settings, Mix } from '../types'
-import { QUESTION_BANK, EXAM_BLUEPRINT } from '../data/questions'
+import type { Chapter, Question, Settings, Mix, Topic } from '../types'
+import { QUESTION_BANK } from '../data/questions'
+import { EXAM_BLUEPRINT } from '../data/curriculum'
 
 // ──────────────────────────────────────────────────────────────
 // ตรรกะการสุ่มชุดข้อสอบและตรวจคำตอบ
@@ -24,13 +25,21 @@ export function normalize(x: string): string {
     .trim()
     .replace(/\s+/g, '')
     .replace(/＋/g, '+')
+    .replace(/[-–—－]/g, '−')
+    .replace(/＝/g, '=')
     .replace(/＞/g, '>')
     .replace(/＜/g, '<')
     .replace(/[，]/g, ',')
+    .replace(/[๐-๙]/g, (d) => String('๐๑๒๓๔๕๖๗๘๙'.indexOf(d)))
 }
 
 export function isCorrect(value: string, answer: string): boolean {
   return normalize(value) === normalize(answer)
+}
+
+/** ตรวจคำตอบของข้อสอบ รวมคำตอบอื่นที่ยอมรับได้ (เช่น สลับที่การบวก) */
+export function matchesAnswer(q: Pick<Question, 'answer' | 'accept'>, value: string): boolean {
+  return isCorrect(value, q.answer) || (q.accept ?? []).some((a) => isCorrect(value, a))
 }
 
 /** สัดส่วนระดับความยากตามความท้าทายที่เลือก */
@@ -41,25 +50,35 @@ const MIX_RATIO: Record<Mix, { easy: number; medium: number; hard: number }> = {
 }
 
 export interface RoundOptions {
-  /** ฝึกเฉพาะบทที่กำหนด (ข้อที่พ่อแม่เพิ่มเองจะไม่ถูกรวม เพราะไม่ได้ระบุบท) */
+  /** ฝึกเฉพาะบทที่กำหนด (ข้อที่ผู้ปกครองเพิ่มเองจะไม่ถูกรวม เพราะไม่ได้ระบุบท) */
   chapters?: Chapter[]
+  /** ฝึกเฉพาะทักษะที่กำหนด */
+  topics?: Topic[]
   /** ใช้เฉพาะข้อแบบเลือกตอบ (ปรนัย) เหมือนข้อสอบจริง */
   choiceOnly?: boolean
+  /** ใช้เฉพาะข้อแบบเติมคำตอบ */
+  fillOnly?: boolean
 }
 
 /**
  * สร้างชุดข้อสอบหนึ่งรอบ
- * - ดึงเฉพาะหัวข้อที่เปิดใช้ + ข้อที่พ่อแม่เพิ่มเอง แล้วกรองตามบท/ชนิดข้อ
+ * - ดึงเฉพาะหัวข้อที่เปิดใช้ + ข้อที่ผู้ปกครองเพิ่มเอง แล้วกรองตามบท/ทักษะ/ชนิดข้อ
  * - กระจายตามน้ำหนักแนวข้อสอบ (EXAM_BLUEPRINT) แล้วเติมให้ครบจำนวน
+ * - ผลลัพธ์คละหัวข้อ (interleaving: Rohrer & Taylor, 2007)
  */
 export function buildRound(settings: Settings, options: RoundOptions = {}): Question[] {
-  const enabled = new Set(settings.enabledTopics)
+  const enabled = new Set(
+    options.topics
+      ? settings.enabledTopics.filter((t) => options.topics!.includes(t))
+      : settings.enabledTopics,
+  )
   const chapters = options.chapters ? new Set<Chapter>(options.chapters) : null
   const pool: Question[] = [...QUESTION_BANK, ...settings.customQuestions].filter(
     (q) =>
       enabled.has(q.topic) &&
       (!chapters || (q.chapter !== undefined && chapters.has(q.chapter))) &&
-      (!options.choiceOnly || q.kind === 'choice'),
+      (!options.choiceOnly || q.kind === 'choice') &&
+      (!options.fillOnly || q.kind === 'fill'),
   )
   const count = Math.max(1, settings.questionsPerRound)
   if (pool.length === 0) return []
@@ -67,7 +86,7 @@ export function buildRound(settings: Settings, options: RoundOptions = {}): Ques
   const ratio = MIX_RATIO[settings.mix]
 
   // จัดโควตาต่อหัวข้อตามน้ำหนักแนวข้อสอบ เฉพาะหัวข้อที่มีข้อสอบในชุดนี้
-  const topics = settings.enabledTopics.filter((t) => pool.some((q) => q.topic === t))
+  const topics = [...enabled].filter((t) => pool.some((q) => q.topic === t))
   const totalWeight = topics.reduce((sum, t) => sum + (EXAM_BLUEPRINT[t] ?? 1), 0)
 
   const selected: Question[] = []

@@ -1,112 +1,126 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Question } from '../types'
-import { TOPIC_NAMES, LEVEL_NAMES } from '../data/questions'
-import { isCorrect, shuffle, pick } from '../lib/quiz'
+import { LEVEL_NAMES, TOPIC_ICONS, TOPIC_SHORT } from '../data/curriculum'
+import { matchesAnswer, shuffle, pick } from '../lib/quiz'
 import { playCorrect, playWrong } from '../lib/sound'
 import { fireConfetti } from '../lib/confetti'
+import { canSpeak, speak, stopSpeaking } from '../lib/speech'
 import { Visual } from './Visual'
 import { ThaiText } from './ThaiText'
+import { ModelView } from './ModelView'
+import { NumberLine } from './NumberLine'
+import { Keypad } from './Keypad'
+import { CHOICE_KEYS, formatEntry } from '../lib/format'
+
+// ──────────────────────────────────────────────────────────────
+// หน้าทำโจทย์ (โหมดฝึก)
+// ลำดับ: คิดเอง → ผิดลองใหม่ได้ → เฉลยพร้อมวิธีคิดทีละขั้นและภาพช่วยคิด
+// (ผลป้อนกลับ: Shute, 2008 · ตัวอย่างการทำ: Sweller & Cooper, 1985)
+// คำชมเน้นความพยายามและวิธีคิด ไม่ชมว่าฉลาด (Mueller & Dweck, 1998)
+// ──────────────────────────────────────────────────────────────
 
 const PRAISE = [
-  'ตอบถูกต้อง เก่งมาก ⭐',
-  'ถูกต้อง ทำได้ดีมาก 🌈',
-  'ตอบถูกต้อง ได้รับดาวเพิ่ม ✨',
-  'ถูกต้องครบถ้วน ยอดเยี่ยม 🏆',
+  'ถูกต้อง ตั้งใจคิดดีมาก',
+  'ถูกต้อง คิดอย่างเป็นขั้นตอนดีมาก',
+  'ถูกต้อง อ่านโจทย์ได้ละเอียดดีมาก',
+  'ถูกต้อง ใช้วิธีคิดได้เหมาะสม',
 ]
+const RETRY_PRAISE = 'ถูกต้องแล้ว ลองคิดใหม่จนได้คำตอบ ดีมาก'
+
+type Tone = 'success' | 'warn' | 'info'
 
 interface Props {
   question: Question
-  index: number
-  total: number
-  showHints: boolean
   sound: boolean
-  /** ตอบถูกแล้วไปข้อถัดไปอัตโนมัติภายในกี่วินาที */
+  readAloud: boolean
+  /** ตอบถูกแล้วไปข้อถัดไปอัตโนมัติในกี่วินาที (0 = กดเอง) */
   autoAdvanceSeconds: number
   /** ตอบผิดได้กี่ครั้งก่อนเฉลย */
   maxTries: number
-  /** เรียกครั้งเดียวเมื่อสรุปผลข้อนั้น พร้อมผลถูก/ผิดสุดท้าย */
-  onAnswered: (correct: boolean) => void
+  /** เรียกครั้งเดียวเมื่อสรุปผลข้อนั้น */
+  onAnswered: (correct: boolean, firstTry: boolean) => void
   onNext: () => void
   isLast: boolean
 }
 
 export function QuestionView({
   question,
-  index,
-  total,
-  showHints,
   sound,
+  readAloud,
   autoAdvanceSeconds,
   maxTries,
   onAnswered,
   onNext,
   isLast,
 }: Props) {
-  const [locked, setLocked] = useState(false) // สรุปผลแล้ว (ตอบถูก หรือ ผิดครบ 2 ครั้ง)
+  const [locked, setLocked] = useState(false)
   const [correct, setCorrect] = useState(false)
   const [wrongTries, setWrongTries] = useState(0)
   const [chosen, setChosen] = useState<string | null>(null)
   const [wrongChoices, setWrongChoices] = useState<string[]>([])
-  const [inputVal, setInputVal] = useState('')
-  const [feedbackMsg, setFeedbackMsg] = useState('')
+  const [entry, setEntry] = useState('')
+  const [feedback, setFeedback] = useState<{ tone: Tone; text: string } | null>(null)
+  const [solutionOpen, setSolutionOpen] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const nextRef = useRef<HTMLButtonElement>(null)
 
-  // อ้างอิง onNext ล่าสุดเสมอ เพื่อให้ตัวจับเวลาเรียกค่าที่อัปเดตแล้ว
   const onNextRef = useRef(onNext)
   onNextRef.current = onNext
 
   // สลับตัวเลือกใหม่ทุกครั้งที่เปลี่ยนข้อ (question คงที่ต่อหนึ่งข้อ)
   const choices = useMemo(() => (question.choices ? shuffle(question.choices) : []), [question])
+  const steps = question.steps ?? [question.hint, question.explain].filter((s): s is string => !!s)
+  const isSentence = question.format === 'sentence'
 
-  // รีเซ็ตสถานะทั้งหมดเมื่อเปลี่ยนข้อ
+  // หยุดเสียงอ่านเมื่อเปลี่ยนข้อ
+  useEffect(() => () => stopSpeaking(), [question])
+
+  // ตอบถูก → นับถอยหลังแล้วไปข้อถัดไป (หยุดนับเมื่อเปิดดูวิธีคิด)
   useEffect(() => {
-    setLocked(false)
-    setCorrect(false)
-    setWrongTries(0)
-    setChosen(null)
-    setWrongChoices([])
-    setInputVal('')
-    setFeedbackMsg('')
-    setCountdown(null)
-    if (question.kind === 'fill') {
-      const t = setTimeout(() => inputRef.current?.focus(), 120)
-      return () => clearTimeout(t)
+    if (!locked || !correct || autoAdvanceSeconds <= 0) return
+    if (solutionOpen) {
+      setCountdown(null)
+      return
     }
-  }, [question])
-
-  // ตอบถูก → นับถอยหลังแล้วไปข้อถัดไปอัตโนมัติ
-  // หมายเหตุ: ตัว updater ต้องบริสุทธิ์ (ไม่มี side effect) เพราะ StrictMode เรียกซ้ำ
-  useEffect(() => {
-    if (!locked || !correct) return
     setCountdown(autoAdvanceSeconds)
-    const id = setInterval(() => {
-      setCountdown((c) => (c !== null && c > 0 ? c - 1 : 0))
-    }, 1000)
+    const id = setInterval(() => setCountdown((c) => (c !== null && c > 0 ? c - 1 : 0)), 1000)
     return () => clearInterval(id)
-  }, [locked, correct, autoAdvanceSeconds])
+  }, [locked, correct, autoAdvanceSeconds, solutionOpen])
 
-  // เมื่อนับถอยหลังถึง 0 จึงไปข้อถัดไป (แยกออกจาก updater เพื่อความถูกต้อง)
   useEffect(() => {
     if (countdown === 0) onNextRef.current()
   }, [countdown])
 
-  function submit(value: string) {
-    if (locked) return
-    const ok = isCorrect(value, question.answer)
+  // ย้ายโฟกัสไปที่ปุ่มข้อถัดไปเมื่อสรุปผล เพื่อกด Enter ต่อได้
+  useEffect(() => {
+    if (locked) nextRef.current?.focus()
+  }, [locked])
 
-    if (ok) {
+  // คีย์ลัด: 1–4 เลือกตัวเลือก ก–ง
+  useEffect(() => {
+    if (question.kind !== 'choice') return
+    const onKey = (e: KeyboardEvent) => {
+      if (locked || e.altKey || e.ctrlKey || e.metaKey) return
+      const i = ['1', '2', '3', '4'].indexOf(e.key)
+      if (i >= 0 && i < choices.length && !wrongChoices.includes(choices[i])) submit(choices[i])
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
+  function submit(value: string) {
+    if (locked || !value) return
+    if (matchesAnswer(question, value)) {
       setLocked(true)
       setCorrect(true)
       setChosen(value)
-      setFeedbackMsg(wrongTries > 0 ? 'ถูกต้องแล้ว เก่งมากที่ตั้งใจ ⭐' : pick(PRAISE))
+      setFeedback({ tone: 'success', text: wrongTries > 0 ? RETRY_PRAISE : pick(PRAISE) })
       playCorrect(sound)
       fireConfetti()
-      onAnswered(true)
+      onAnswered(true, wrongTries === 0)
       return
     }
 
-    // ตอบผิด
     playWrong(sound)
     const tries = wrongTries + 1
     setWrongTries(tries)
@@ -114,122 +128,148 @@ export function QuestionView({
     if (question.kind === 'choice') setWrongChoices((w) => [...w, value])
 
     if (tries < maxTries) {
-      // ผิดครั้งแรก → ยังไม่เฉลย ให้ลองอีกครั้ง
-      setFeedbackMsg('ยังไม่ถูกต้อง ลองอีกครั้งนะ')
-      if (question.kind === 'fill') {
-        setInputVal('')
-        setTimeout(() => inputRef.current?.focus(), 50)
-      }
+      setFeedback({ tone: 'warn', text: 'ยังไม่ถูก ลองอ่านโจทย์อีกครั้ง แล้วคิดใหม่นะ' })
+      if (question.kind === 'fill') setEntry('')
     } else {
-      // ผิดครบ 2 ครั้ง → เฉลย
       setLocked(true)
       setCorrect(false)
-      setFeedbackMsg('ยังไม่ถูกต้อง ไม่เป็นไร ลองอ่านวิธีคิดด้านล่าง')
-      onAnswered(false)
+      setFeedback({ tone: 'info', text: 'ไม่เป็นไร มาดูวิธีคิดด้วยกันนะ' })
+      setSolutionOpen(true)
+      onAnswered(false, false)
     }
   }
 
+  function readQuestion() {
+    const parts = [question.text]
+    if (question.kind === 'choice') {
+      parts.push(choices.map((c, i) => `ข้อ ${CHOICE_KEYS[i]} ${c}`).join(' '))
+    }
+    speak(parts.join(' '))
+  }
+
   return (
-    <section className="card questionCard">
-      <div className="tag">
-        {TOPIC_NAMES[question.topic]} · ระดับ{LEVEL_NAMES[question.level]}
+    <article className="qCard" aria-labelledby={`q-${question.id}`}>
+      <div className="qMeta">
+        <span className="chip">
+          <span aria-hidden="true">{TOPIC_ICONS[question.topic]}</span>{' '}
+          {TOPIC_SHORT[question.topic]}
+        </span>
+        <span className="chip chipMuted">{LEVEL_NAMES[question.level]}</span>
+        {readAloud && canSpeak() && (
+          <button className="btn btnGhost btnSmall qListen" onClick={readQuestion}>
+            <span aria-hidden="true">🔊</span> ฟังโจทย์
+          </button>
+        )}
       </div>
-      <div className={`question ${question.text.length > 34 ? 'long' : ''}`}>
+
+      <h2
+        id={`q-${question.id}`}
+        className={`qText ${question.text.length > 34 ? 'qTextLong' : ''}`}
+      >
         <ThaiText text={question.text} />
-      </div>
+      </h2>
       {question.small && (
-        <p className="instruction">
+        <p className="qSmall">
           <ThaiText text={question.small} />
         </p>
       )}
       <Visual visual={question.visual} />
+      {question.line && (
+        <NumberLine spec={question.line} markEnd={question.answer !== String(question.line.end)} />
+      )}
 
       {question.kind === 'choice' ? (
-        <div className="choiceGrid">
-          {choices.map((value) => {
-            let cls = 'choice'
-            if (locked) {
-              if (isCorrect(value, question.answer)) cls += ' correct'
-              else if (value === chosen || wrongChoices.includes(value)) cls += ' wrong'
-            } else if (wrongChoices.includes(value)) {
-              cls += ' wrong'
-            }
-            const disabled = locked || wrongChoices.includes(value)
+        <div
+          className={`choices ${choices.some((c) => c.length > 8) ? 'choicesWide' : ''}`}
+          role="group"
+          aria-label="ตัวเลือก"
+        >
+          {choices.map((value, i) => {
+            const isAnswer = matchesAnswer(question, value)
+            const isWrong =
+              wrongChoices.includes(value) || (locked && value === chosen && !isAnswer)
+            const state = locked && isAnswer ? 'choiceCorrect' : isWrong ? 'choiceWrong' : ''
             return (
-              <button key={value} className={cls} disabled={disabled} onClick={() => submit(value)}>
-                {value}
+              <button
+                key={value}
+                className={`choice ${state}`}
+                disabled={locked || wrongChoices.includes(value)}
+                onClick={() => submit(value)}
+                aria-label={`ตัวเลือก ${CHOICE_KEYS[i]} ${value}${state === 'choiceCorrect' ? ' คำตอบที่ถูก' : state === 'choiceWrong' ? ' ไม่ถูก' : ''}`}
+              >
+                <span className="choiceKey" aria-hidden="true">
+                  {CHOICE_KEYS[i]}
+                </span>
+                <span className="choiceText">{value}</span>
+                {state && (
+                  <span className="choiceMark" aria-hidden="true">
+                    {state === 'choiceCorrect' ? '✓' : '✕'}
+                  </span>
+                )}
               </button>
             )
           })}
         </div>
       ) : (
-        <div className="inputRow">
-          <input
-            ref={inputRef}
-            className="answer"
-            inputMode="numeric"
-            placeholder="พิมพ์คำตอบ"
-            value={inputVal}
-            disabled={locked}
-            onChange={(e) => setInputVal(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && inputVal.trim() !== '') submit(inputVal)
-            }}
-          />
-          {!locked && (
-            <button
-              className="primary"
-              disabled={inputVal.trim() === ''}
-              onClick={() => submit(inputVal)}
-            >
-              ส่งคำตอบ
-            </button>
-          )}
-        </div>
+        <Keypad
+          id={`fill-${question.id}`}
+          label={isSentence ? 'ประโยคสัญลักษณ์' : 'คำตอบ'}
+          value={locked ? (chosen ?? '') : entry}
+          onChange={setEntry}
+          onSubmit={() => submit(entry)}
+          sentence={isSentence}
+          disabled={locked}
+        />
       )}
 
-      {showHints && !locked && question.hint && (
-        <div className="hintBox">
-          💡 <ThaiText text={question.hint} />
-        </div>
-      )}
-
-      {feedbackMsg && (
-        <div className="feedback" style={{ color: correct ? 'var(--green2)' : 'var(--red)' }}>
-          {feedbackMsg}
-        </div>
-      )}
-
-      {/* ผิดครั้งแรก: ยังไม่เฉลย บอกให้ลองอีกครั้ง */}
-      {!locked && wrongTries > 0 && (
-        <div className="mini" style={{ marginTop: 2 }}>
-          เหลือโอกาสอีก {maxTries - wrongTries} ครั้ง
-        </div>
-      )}
+      <div className="qFeedbackArea" aria-live="polite">
+        {feedback && (
+          <div className={`feedback fb-${feedback.tone}`}>
+            <span aria-hidden="true">
+              {feedback.tone === 'success' ? '🌟' : feedback.tone === 'warn' ? '🤔' : '💪'}
+            </span>{' '}
+            {feedback.text}
+            {!locked && wrongTries > 0 && (
+              <span className="fbSub"> (เหลือโอกาสอีก {maxTries - wrongTries} ครั้ง)</span>
+            )}
+          </div>
+        )}
+      </div>
 
       {locked && (
-        <>
-          {(!correct || showHints) && question.explain && (
-            <div className="explain">
-              วิธีคิด: <ThaiText text={question.explain} />
-            </div>
-          )}
-          <div className="btnRow" style={{ justifyContent: 'center' }}>
-            <button className="green" onClick={onNext}>
-              {isLast ? 'ดูสรุปผล' : 'ไปข้อถัดไป'}
-              {countdown !== null && countdown > 0 ? ` (${countdown})` : ''} →
+        <div className="afterAnswer">
+          {correct && steps.length > 0 && !solutionOpen && (
+            <button className="btn btnGhost btnSmall" onClick={() => setSolutionOpen(true)}>
+              ดูวิธีคิด
             </button>
-          </div>
-          {correct && countdown !== null && countdown > 0 && (
-            <div className="mini" style={{ marginTop: 4 }}>
-              จะไปข้อถัดไปอัตโนมัติใน {countdown} วินาที (กดปุ่มเพื่อไปทันที)
-            </div>
           )}
-          <div className="mini" style={{ marginTop: 6 }}>
-            ข้อ {index + 1} จาก {total}
-          </div>
-        </>
+          {solutionOpen && (
+            <section className="solution" aria-label="วิธีคิดทีละขั้น">
+              <h3>วิธีคิดทีละขั้น</h3>
+              <ol>
+                {steps.map((s) => (
+                  <li key={s}>
+                    <ThaiText text={s} />
+                  </li>
+                ))}
+              </ol>
+              {question.line && <NumberLine spec={question.line} showJumps />}
+              {question.model && <ModelView model={question.model} />}
+              {!correct && (
+                <p className="solutionAnswer">
+                  คำตอบที่ถูกคือ{' '}
+                  <b>{isSentence ? formatEntry(question.answer) : question.answer}</b>
+                </p>
+              )}
+            </section>
+          )}
+          <button ref={nextRef} className="btn btnPrimary btnLarge" onClick={onNext}>
+            {isLast ? 'ดูสรุปผล' : 'ข้อถัดไป'}
+            {countdown !== null && countdown > 0 ? ` (${countdown})` : ''}{' '}
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
       )}
-    </section>
+    </article>
   )
 }

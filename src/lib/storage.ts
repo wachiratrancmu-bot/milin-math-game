@@ -1,5 +1,5 @@
 import type { Settings, Progress, Topic } from '../types'
-import { EXAM_BLUEPRINT, TOPIC_NAMES } from '../data/questions'
+import { EXAM_BLUEPRINT, TOPIC_NAMES } from '../data/curriculum'
 
 // ──────────────────────────────────────────────────────────────
 // บันทึก/อ่านค่าจาก localStorage แบบกันพังด้วยเวอร์ชัน schema
@@ -14,8 +14,9 @@ export const DEFAULT_SETTINGS: Settings = {
   mode: 'practice',
   mix: 'balanced',
   enabledTopics: Object.keys(EXAM_BLUEPRINT) as Settings['enabledTopics'],
-  showHints: true,
   sound: true,
+  readAloud: true,
+  examDate: '2026-10-05',
   autoAdvanceSeconds: 10,
   maxTries: 2,
   rewardThreshold: 30,
@@ -34,6 +35,11 @@ export const DEFAULT_PROGRESS: Progress = {
   bestStreak: 0,
   perfectRounds: 0,
   history: [],
+  rounds: 0,
+  topicStats: {},
+  mistakes: {},
+  examHistory: [],
+  lessonsDone: [],
 }
 
 function load<T>(key: string, fallback: T): T {

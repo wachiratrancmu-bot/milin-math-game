@@ -2,13 +2,10 @@ import { useEffect } from 'react'
 import { useSettings } from '../state/SettingsContext'
 import { playReward } from '../lib/sound'
 import { fireConfetti } from '../lib/confetti'
+import { Modal } from './ui'
 
-interface Props {
-  count: number
-  onClose: () => void
-}
-
-export function RewardModal({ count, onClose }: Props) {
+// รางวัลเป็นข้อมูลความก้าวหน้า ผู้ปกครองเป็นผู้มอบ (Deci, Koestner, & Ryan, 1999)
+export function RewardModal({ count, onClose }: { count: number; onClose: () => void }) {
   const { settings } = useSettings()
 
   useEffect(() => {
@@ -20,32 +17,28 @@ export function RewardModal({ count, onClose }: Props) {
       clearInterval(t)
       clearTimeout(stop)
     }
-    // ตั้งใจให้ฉลองครั้งเดียวตอนเปิด modal
+    // ตั้งใจให้ฉลองครั้งเดียวตอนเปิด
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
-    <div className="overlay">
-      <div className="modal rewardModal">
-        <div className="gift">{settings.rewardEmoji}</div>
-        <div className="rewardTitle">
-          ยินดีด้วย! <span className="nobr">{settings.playerName}</span>ทำได้ดีมาก 🎉
-        </div>
-        <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--soft)', lineHeight: 1.6 }}>
-          สะสมดาวครบแล้ว ได้รับ <b>{settings.rewardName}</b>{' '}
-          {count > 1 ? `จำนวน ${count} ชิ้น` : '1 ชิ้น'}
-          <br />
-          แจ้งคุณพ่อคุณแม่เพื่อรับรางวัลได้เลย
-        </p>
-        <div className="note" style={{ textAlign: 'center' }}>
-          คุณพ่อคุณแม่กดยืนยันการมอบรางวัลได้ที่หน้า “ตั้งค่าผู้ปกครอง”
-        </div>
-        <div className="btnRow" style={{ justifyContent: 'center' }}>
-          <button className="green" onClick={onClose}>
-            รับทราบ 🎈
-          </button>
-        </div>
+    <Modal label="ได้รับรางวัล" onClose={onClose}>
+      <div className="rewardPop" aria-hidden="true">
+        {settings.rewardEmoji}
       </div>
-    </div>
+      <h2 className="modalTitle">
+        ยินดีด้วย <span className="nobr">{settings.playerName}</span> สะสมดาวครบแล้ว
+      </h2>
+      <p className="modalText">
+        ฝึกอย่างตั้งใจจนได้รับ <b>{settings.rewardName}</b> {count > 1 ? `${count} ชิ้น` : '1 ชิ้น'}
+        <br />
+        แจ้งคุณพ่อคุณแม่เพื่อรับรางวัลได้เลย
+      </p>
+      <div className="actions">
+        <button className="btn btnPrimary btnLarge" onClick={onClose}>
+          รับทราบ
+        </button>
+      </div>
+    </Modal>
   )
 }

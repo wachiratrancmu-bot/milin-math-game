@@ -1,16 +1,22 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { Progress, RoundResult } from '../types'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import type { Progress, Question, RoundResult } from '../types'
 import { DEFAULT_PROGRESS, loadProgress, saveProgress } from '../lib/storage'
 import { applyRound, type RoundInput } from '../lib/rewards'
+import { recordResult, type ExamGrade } from '../lib/learning'
 import { useSettings } from './SettingsContext'
 
 export type RoundSummary = RoundInput
 
 interface ProgressCtx {
   progress: Progress
-  /** บันทึกผลหนึ่งรอบ คืนค่าสรุปดาว/รางวัลที่ได้ */
+  /** บันทึกผลการตอบหนึ่งข้อ (ใช้วัดความเชี่ยวชาญและกล่องทบทวน) */
+  recordAnswer: (q: Question, firstTryCorrect: boolean) => void
+  /** บันทึกผลหนึ่งรอบของการฝึก คืนค่าสรุปดาว/รางวัลที่ได้ */
   finishRound: (s: RoundSummary) => RoundResult
-  /** พ่อแม่กดเมื่อมอบรางวัลให้ลูกแล้ว */
+  /** บันทึกผลข้อสอบจำลอง (รวมบันทึกผลรายข้อ) */
+  finishExam: (grade: ExamGrade) => RoundResult
+  markLessonDone: (id: string) => void
+  /** ผู้ปกครองกดเมื่อมอบรางวัลแล้ว */
   redeemTicket: () => void
   /** จำนวนรางวัลที่ยังไม่ได้มอบ */
   pendingTickets: number
@@ -19,32 +25,80 @@ interface ProgressCtx {
 
 const Ctx = createContext<ProgressCtx | null>(null)
 
+const now = () => new Date().toLocaleString('th-TH')
+
 export function ProgressProvider({ children }: { children: ReactNode }) {
   const { settings } = useSettings()
   const [progress, setProgress] = useState<Progress>(() => loadProgress())
+  // เก็บค่าล่าสุดเสมอ เพื่อให้การบันทึกหลายครั้งติดกันใน event เดียวไม่ทับกัน
+  const latest = useRef(progress)
 
   useEffect(() => {
     saveProgress(progress)
   }, [progress])
 
+  const update = (fn: (p: Progress) => Progress) => {
+    latest.current = fn(latest.current)
+    setProgress(latest.current)
+  }
+
+  const recordAnswer = (q: Question, firstTryCorrect: boolean) =>
+    update((p) => recordResult(p, q, firstTryCorrect))
+
   const finishRound = (s: RoundSummary): RoundResult => {
-    const { next, result } = applyRound(progress, settings, s, new Date().toLocaleString('th-TH'))
-    setProgress(next)
+    const { next, result } = applyRound(latest.current, settings, s, now())
+    update(() => next)
     return result
   }
 
-  const redeemTicket = () =>
-    setProgress((p) => ({
-      ...p,
-      ticketsRedeemed: Math.min(p.ticketsEarned, p.ticketsRedeemed + 1),
+  const finishExam = (grade: ExamGrade): RoundResult => {
+    let p = latest.current
+    for (const item of grade.items) p = recordResult(p, item.question, item.correct)
+    const { next, result } = applyRound(
+      p,
+      settings,
+      {
+        score: grade.score,
+        total: grade.total,
+        mode: 'exam',
+        perTopic: grade.perTopic,
+        maxStreak: 0,
+      },
+      now(),
+    )
+    update(() => ({
+      ...next,
+      examHistory: [
+        { date: now(), score: grade.score, total: grade.total, perTopic: grade.perTopic },
+        ...next.examHistory,
+      ].slice(0, 20),
     }))
+    return result
+  }
 
-  const resetProgress = () => setProgress({ ...DEFAULT_PROGRESS })
+  const markLessonDone = (id: string) =>
+    update((p) => (p.lessonsDone.includes(id) ? p : { ...p, lessonsDone: [...p.lessonsDone, id] }))
+
+  const redeemTicket = () =>
+    update((p) => ({ ...p, ticketsRedeemed: Math.min(p.ticketsEarned, p.ticketsRedeemed + 1) }))
+
+  const resetProgress = () => update(() => ({ ...DEFAULT_PROGRESS }))
 
   const pendingTickets = Math.max(0, progress.ticketsEarned - progress.ticketsRedeemed)
 
   return (
-    <Ctx.Provider value={{ progress, finishRound, redeemTicket, pendingTickets, resetProgress }}>
+    <Ctx.Provider
+      value={{
+        progress,
+        recordAnswer,
+        finishRound,
+        finishExam,
+        markLessonDone,
+        redeemTicket,
+        pendingTickets,
+        resetProgress,
+      }}
+    >
       {children}
     </Ctx.Provider>
   )

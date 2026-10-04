@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalize, isCorrect, shuffle, buildRound } from './quiz'
+import { normalize, isCorrect, matchesAnswer, shuffle, buildRound } from './quiz'
 import { DEFAULT_SETTINGS, migrateSettings } from './storage'
 import type { Settings } from '../types'
 
@@ -15,6 +15,16 @@ describe('normalize / isCorrect', () => {
     expect(isCorrect('3, 6, 8', '3,6,8')).toBe(true)
     expect(isCorrect('<', '<')).toBe(true)
     expect(isCorrect('9', '8')).toBe(false)
+  })
+  it('รับเครื่องหมายลบจากแป้นพิมพ์และตัวเลขไทย', () => {
+    expect(isCorrect('10-6=4', '10 − 6 = 4')).toBe(true)
+    expect(isCorrect('๑๕', '15')).toBe(true)
+  })
+  it('ยอมรับการสลับที่ของการบวก เมื่อข้อกำหนดไว้', () => {
+    const q = { answer: '2 + 4 = 6', accept: ['4 + 2 = 6'] }
+    expect(matchesAnswer(q, '2+4=6')).toBe(true)
+    expect(matchesAnswer(q, '4+2=6')).toBe(true)
+    expect(matchesAnswer(q, '6-4=2')).toBe(false)
   })
 })
 
@@ -85,6 +95,19 @@ describe('buildRound', () => {
     expect(round).toHaveLength(20)
     expect(round.every((q) => q.kind === 'choice')).toBe(true)
     expect(new Set(round.map((q) => q.topic)).size).toBe(DEFAULT_SETTINGS.enabledTopics.length)
+  })
+  it('ข้อสอบจำลองแบบผสม: ตอนที่ 2 เติมคำตอบ 5 ข้อ', () => {
+    const round = buildRound({ ...DEFAULT_SETTINGS, questionsPerRound: 5 }, { fillOnly: true })
+    expect(round).toHaveLength(5)
+    expect(round.every((q) => q.kind === 'fill')).toBe(true)
+  })
+  it('ฝึกรายทักษะ: ได้เฉพาะทักษะที่เลือก', () => {
+    const round = buildRound(
+      { ...DEFAULT_SETTINGS, questionsPerRound: 5 },
+      { topics: ['relation'] },
+    )
+    expect(round).toHaveLength(5)
+    expect(round.every((q) => q.topic === 'relation')).toBe(true)
   })
   it('แบบฝึกรวม 40 ข้อ ไม่มีข้อซ้ำ', () => {
     const round = buildRound({ ...DEFAULT_SETTINGS, questionsPerRound: 40 })
