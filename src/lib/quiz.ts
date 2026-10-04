@@ -1,4 +1,4 @@
-import type { Question, Settings, Mix } from '../types'
+import type { Chapter, Question, Settings, Mix } from '../types'
 import { QUESTION_BANK, EXAM_BLUEPRINT } from '../data/questions'
 
 // ──────────────────────────────────────────────────────────────
@@ -36,32 +36,44 @@ export function isCorrect(value: string, answer: string): boolean {
 /** สัดส่วนระดับความยากตามความท้าทายที่เลือก */
 const MIX_RATIO: Record<Mix, { easy: number; medium: number; hard: number }> = {
   warmup: { easy: 0.6, medium: 0.35, hard: 0.05 },
-  balanced: { easy: 0.45, medium: 0.45, hard: 0.1 },
-  challenge: { easy: 0.25, medium: 0.5, hard: 0.25 },
+  balanced: { easy: 0.3, medium: 0.55, hard: 0.15 },
+  challenge: { easy: 0.15, medium: 0.55, hard: 0.3 },
+}
+
+export interface RoundOptions {
+  /** ฝึกเฉพาะบทที่กำหนด (ข้อที่พ่อแม่เพิ่มเองจะไม่ถูกรวม เพราะไม่ได้ระบุบท) */
+  chapters?: Chapter[]
+  /** ใช้เฉพาะข้อแบบเลือกตอบ (ปรนัย) เหมือนข้อสอบจริง */
+  choiceOnly?: boolean
 }
 
 /**
  * สร้างชุดข้อสอบหนึ่งรอบ
- * - ดึงเฉพาะหัวข้อที่เปิดใช้ + ข้อที่พ่อแม่เพิ่มเอง
- * - กระจายตามน้ำหนักใบสอบจริง (EXAM_BLUEPRINT) แล้วเติมให้ครบจำนวน
+ * - ดึงเฉพาะหัวข้อที่เปิดใช้ + ข้อที่พ่อแม่เพิ่มเอง แล้วกรองตามบท/ชนิดข้อ
+ * - กระจายตามน้ำหนักแนวข้อสอบ (EXAM_BLUEPRINT) แล้วเติมให้ครบจำนวน
  */
-export function buildRound(settings: Settings): Question[] {
+export function buildRound(settings: Settings, options: RoundOptions = {}): Question[] {
   const enabled = new Set(settings.enabledTopics)
-  const pool: Question[] = [...QUESTION_BANK, ...settings.customQuestions].filter((q) =>
-    enabled.has(q.topic),
+  const chapters = options.chapters ? new Set<Chapter>(options.chapters) : null
+  const pool: Question[] = [...QUESTION_BANK, ...settings.customQuestions].filter(
+    (q) =>
+      enabled.has(q.topic) &&
+      (!chapters || (q.chapter !== undefined && chapters.has(q.chapter))) &&
+      (!options.choiceOnly || q.kind === 'choice'),
   )
   const count = Math.max(1, settings.questionsPerRound)
   if (pool.length === 0) return []
 
   const ratio = MIX_RATIO[settings.mix]
 
-  // จัดโควตาต่อหัวข้อตามน้ำหนักใบสอบ (เฉพาะหัวข้อที่เปิด)
-  const totalWeight = settings.enabledTopics.reduce((sum, t) => sum + (EXAM_BLUEPRINT[t] ?? 1), 0)
+  // จัดโควตาต่อหัวข้อตามน้ำหนักแนวข้อสอบ เฉพาะหัวข้อที่มีข้อสอบในชุดนี้
+  const topics = settings.enabledTopics.filter((t) => pool.some((q) => q.topic === t))
+  const totalWeight = topics.reduce((sum, t) => sum + (EXAM_BLUEPRINT[t] ?? 1), 0)
 
   const selected: Question[] = []
   const used = new Set<string>()
 
-  for (const topic of settings.enabledTopics) {
+  for (const topic of topics) {
     const quota = Math.round((count * (EXAM_BLUEPRINT[topic] ?? 1)) / totalWeight)
     const byTopic = pool.filter((q) => q.topic === topic)
     const picked = pickByLevel(byTopic, quota, ratio, used)

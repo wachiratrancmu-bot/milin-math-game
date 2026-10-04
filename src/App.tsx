@@ -1,37 +1,35 @@
 import { useState } from 'react'
-import type { Question, Settings, Mode } from './types'
-import { Home } from './components/Home'
+import type { Question, Settings } from './types'
+import { Home, type StartConfig } from './components/Home'
 import { Game } from './components/Game'
 import { ParentSettings } from './components/ParentSettings'
 import { useSettings } from './state/SettingsContext'
 import { buildRound } from './lib/quiz'
 
 export default function App() {
-  const { settings, update } = useSettings()
+  const { settings } = useSettings()
   const [screen, setScreen] = useState<'home' | 'game'>('home')
   const [round, setRound] = useState<Question[]>([])
-  const [mode, setMode] = useState<Mode>('practice')
+  // ค่าที่ใช้จริงในรอบนี้ (ค่าตั้งของพ่อแม่ + ค่าเฉพาะของภารกิจ)
+  const [roundSettings, setRoundSettings] = useState<Settings>(settings)
   const [showParent, setShowParent] = useState(false)
-  const [lastOverride, setLastOverride] = useState<Partial<Settings> | undefined>(undefined)
+  const [lastStart, setLastStart] = useState<StartConfig>({})
+  const [roundNo, setRoundNo] = useState(0)
 
-  function start(override?: Partial<Settings>) {
-    const effective: Settings = { ...settings, ...override }
-    const questions = buildRound(effective)
+  function start(config: StartConfig = {}) {
+    // ค่าของภารกิจใช้เฉพาะรอบนี้ ไม่บันทึกทับค่าที่พ่อแม่ตั้งไว้
+    const effective: Settings = { ...settings, ...config.patch }
+    const questions = buildRound(effective, config.options)
     if (questions.length === 0) {
       alert('ยังไม่มีข้อสอบในหัวข้อที่เลือก กรุณาเปิดหัวข้ออื่นในหน้าตั้งค่า')
       return
     }
-    // จดจำ preset ไว้ใช้ตอน "เล่นอีกรอบ" และบันทึกค่าเป็นค่าตั้งต้นถัดไป
-    if (override) update(override)
-    setLastOverride(override)
+    setLastStart(config)
     setRound(questions)
-    setMode(effective.mode)
+    setRoundSettings(effective)
+    setRoundNo((n) => n + 1)
     setScreen('game')
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  function replay() {
-    start(lastOverride)
   }
 
   function goHome() {
@@ -44,7 +42,14 @@ export default function App() {
       {screen === 'home' ? (
         <Home onStart={start} onOpenParent={() => setShowParent(true)} />
       ) : (
-        <Game questions={round} mode={mode} onHome={goHome} onReplay={replay} />
+        <Game
+          // เปลี่ยน key ทุกครั้งที่เริ่มรอบใหม่ เพื่อล้างคะแนนและข้อปัจจุบันของรอบก่อน
+          key={roundNo}
+          questions={round}
+          settings={roundSettings}
+          onHome={goHome}
+          onReplay={() => start(lastStart)}
+        />
       )}
 
       {showParent && <ParentSettings onClose={() => setShowParent(false)} />}

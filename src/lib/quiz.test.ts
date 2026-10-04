@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { normalize, isCorrect, shuffle, buildRound } from './quiz'
-import { DEFAULT_SETTINGS } from './storage'
+import { DEFAULT_SETTINGS, migrateSettings } from './storage'
 import type { Settings } from '../types'
 
 describe('normalize / isCorrect', () => {
@@ -45,25 +45,26 @@ describe('buildRound', () => {
   it('ดึงเฉพาะหัวข้อที่เปิดใช้', () => {
     const settings: Settings = {
       ...DEFAULT_SETTINGS,
-      enabledTopics: ['rank'],
+      enabledTopics: ['compare'],
       questionsPerRound: 8,
     }
     const round = buildRound(settings)
     expect(round.length).toBeGreaterThan(0)
-    expect(round.every((q) => q.topic === 'rank')).toBe(true)
+    expect(round.every((q) => q.topic === 'compare')).toBe(true)
   })
   it('รวมข้อสอบที่พ่อแม่เพิ่มเอง', () => {
+    // หัวข้อ relation มีข้อน้อยกว่า 30 จึงต้องถูกเลือกทุกข้อ รวมข้อที่เพิ่มเอง
     const settings: Settings = {
       ...DEFAULT_SETTINGS,
-      enabledTopics: ['part'],
+      enabledTopics: ['relation'],
       questionsPerRound: 30,
       customQuestions: [
         {
           id: 'custom-x',
-          topic: 'part',
+          topic: 'relation',
           level: 'easy',
           kind: 'fill',
-          text: '1+1=?',
+          text: '1 + 1 = □',
           answer: '2',
           custom: true,
         },
@@ -71,5 +72,43 @@ describe('buildRound', () => {
     }
     const round = buildRound(settings)
     expect(round.some((q) => q.id === 'custom-x')).toBe(true)
+  })
+  it('ฝึกรายบท: ได้เฉพาะข้อของบทที่เลือก', () => {
+    for (const ch of [4, 5, 6] as const) {
+      const round = buildRound({ ...DEFAULT_SETTINGS, questionsPerRound: 15 }, { chapters: [ch] })
+      expect(round).toHaveLength(15)
+      expect(round.every((q) => q.chapter === ch)).toBe(true)
+    }
+  })
+  it('ข้อสอบจำลอง: 20 ข้อ ปรนัยล้วน และครบทุกหัวข้อ', () => {
+    const round = buildRound({ ...DEFAULT_SETTINGS, questionsPerRound: 20 }, { choiceOnly: true })
+    expect(round).toHaveLength(20)
+    expect(round.every((q) => q.kind === 'choice')).toBe(true)
+    expect(new Set(round.map((q) => q.topic)).size).toBe(DEFAULT_SETTINGS.enabledTopics.length)
+  })
+  it('แบบฝึกรวม 40 ข้อ ไม่มีข้อซ้ำ', () => {
+    const round = buildRound({ ...DEFAULT_SETTINGS, questionsPerRound: 40 })
+    expect(round).toHaveLength(40)
+    expect(new Set(round.map((q) => q.id)).size).toBe(40)
+  })
+})
+
+describe('migrateSettings', () => {
+  it('ค่าที่บันทึกจากคลังรุ่นเก่า (บทที่ 1) ถูกปรับให้เปิดทุกหัวข้อใหม่', () => {
+    const old = { ...DEFAULT_SETTINGS, enabledTopics: ['place', 'rank', 'pattern'] as never }
+    expect(migrateSettings(old).enabledTopics).toEqual(DEFAULT_SETTINGS.enabledTopics)
+  })
+  it('คงหัวข้อที่พ่อแม่เลือกไว้ ถ้าเป็นหัวข้อปัจจุบัน', () => {
+    const s = { ...DEFAULT_SETTINGS, enabledTopics: ['add', 'sub'] as Settings['enabledTopics'] }
+    expect(migrateSettings(s).enabledTopics).toEqual(['add', 'sub'])
+  })
+  it('ข้อที่พ่อแม่เพิ่มเองในหัวข้อเก่าย้ายไปหัวข้อใหม่ ไม่สูญหาย', () => {
+    const s = {
+      ...DEFAULT_SETTINGS,
+      customQuestions: [
+        { id: 'c1', topic: 'part', level: 'easy', kind: 'fill', text: 'x', answer: '1' },
+      ] as never,
+    }
+    expect(migrateSettings(s).customQuestions[0].topic).toBe('add')
   })
 })

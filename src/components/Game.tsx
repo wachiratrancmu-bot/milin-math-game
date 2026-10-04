@@ -1,21 +1,21 @@
 import { useMemo, useRef, useState } from 'react'
-import type { Question, RoundResult, Mode } from '../types'
+import type { Question, RoundResult, Settings } from '../types'
 import { QuestionView } from './QuestionView'
 import { ResultModal } from './ResultModal'
 import { RewardModal } from './RewardModal'
 import { useProgress } from '../state/ProgressContext'
-import { useSettings } from '../state/SettingsContext'
 
 interface Props {
   questions: Question[]
-  mode: Mode
+  /** ค่าที่ใช้ในรอบนี้ (ค่าตั้งของพ่อแม่ + ค่าเฉพาะของภารกิจ) */
+  settings: Settings
   onHome: () => void
   onReplay: () => void
 }
 
-export function Game({ questions, mode, onHome, onReplay }: Props) {
-  const { settings } = useSettings()
+export function Game({ questions, settings, onHome, onReplay }: Props) {
   const { finishRound } = useProgress()
+  const mode = settings.mode
 
   const [index, setIndex] = useState(0)
   const [score, setScore] = useState(0)

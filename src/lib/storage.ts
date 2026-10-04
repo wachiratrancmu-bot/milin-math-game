@@ -1,5 +1,5 @@
-import type { Settings, Progress } from '../types'
-import { EXAM_BLUEPRINT } from '../data/questions'
+import type { Settings, Progress, Topic } from '../types'
+import { EXAM_BLUEPRINT, TOPIC_NAMES } from '../data/questions'
 
 // ──────────────────────────────────────────────────────────────
 // บันทึก/อ่านค่าจาก localStorage แบบกันพังด้วยเวอร์ชัน schema
@@ -56,7 +56,32 @@ function save<T>(key: string, value: T): void {
   }
 }
 
-export const loadSettings = (): Settings => load(SETTINGS_KEY, DEFAULT_SETTINGS)
+const isTopic = (t: string): t is Topic => t in TOPIC_NAMES
+
+/** หัวข้อจากคลังข้อสอบรุ่นก่อน (บทที่ 1) → หัวข้อใหม่ที่ใกล้เคียงที่สุด */
+const LEGACY_TOPIC: Record<string, Topic> = {
+  expand: 'place',
+  part: 'add',
+  rank: 'order',
+  pattern: 'order',
+}
+
+/** ปรับค่าที่บันทึกไว้จากเวอร์ชันเก่าให้ใช้กับคลังข้อสอบปัจจุบันได้ */
+export function migrateSettings(s: Settings): Settings {
+  const stored: string[] = s.enabledTopics ?? []
+  const hasLegacy = stored.some((t) => !isTopic(t))
+  const topics = stored.filter(isTopic)
+  return {
+    ...s,
+    // พบหัวข้อรุ่นเก่า = คลังข้อสอบเปลี่ยนแล้ว จึงเปิดทุกหัวข้อใหม่ให้ครบ
+    enabledTopics: hasLegacy || topics.length === 0 ? [...DEFAULT_SETTINGS.enabledTopics] : topics,
+    customQuestions: (s.customQuestions ?? []).map((q) =>
+      isTopic(q.topic) ? q : { ...q, topic: LEGACY_TOPIC[q.topic] ?? 'number' },
+    ),
+  }
+}
+
+export const loadSettings = (): Settings => migrateSettings(load(SETTINGS_KEY, DEFAULT_SETTINGS))
 export const saveSettings = (s: Settings): void => save(SETTINGS_KEY, s)
 
 export const loadProgress = (): Progress => load(PROGRESS_KEY, DEFAULT_PROGRESS)

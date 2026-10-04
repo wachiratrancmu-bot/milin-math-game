@@ -339,7 +339,7 @@ export function ParentSettings({ onClose }: { onClose: () => void }) {
 // ── ฟอร์มเพิ่มข้อสอบเอง ─────────────────────────────────
 function CustomQuestions() {
   const { settings, update } = useSettings()
-  const [topic, setTopic] = useState<Topic>('part')
+  const [topic, setTopic] = useState<Topic>('add')
   const [kind, setKind] = useState<'choice' | 'fill'>('choice')
   const [text, setText] = useState('')
   const [visual, setVisual] = useState('')

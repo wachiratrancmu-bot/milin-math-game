@@ -28,7 +28,9 @@ export function RewardModal({ count, onClose }: Props) {
     <div className="overlay">
       <div className="modal rewardModal">
         <div className="gift">{settings.rewardEmoji}</div>
-        <div className="rewardTitle">ยินดีด้วย! {settings.playerName}ทำได้ดีมาก 🎉</div>
+        <div className="rewardTitle">
+          ยินดีด้วย! <span className="nobr">{settings.playerName}</span>ทำได้ดีมาก 🎉
+        </div>
         <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--soft)', lineHeight: 1.6 }}>
           สะสมดาวครบแล้ว ได้รับ <b>{settings.rewardName}</b>{' '}
           {count > 1 ? `จำนวน ${count} ชิ้น` : '1 ชิ้น'}

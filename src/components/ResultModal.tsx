@@ -32,7 +32,9 @@ export function ResultModal({ result, onReplay, onHome }: Props) {
   return (
     <div className="overlay">
       <div className="modal">
-        <h2 style={{ margin: '0 0 4px' }}>สรุปผลของ{settings.playerName}</h2>
+        <h2 style={{ margin: '0 0 4px' }}>
+          สรุปผลของ<span className="nobr">{settings.playerName}</span>
+        </h2>
         <div className="scoreNum">
           {result.score}/{result.total}
         </div>

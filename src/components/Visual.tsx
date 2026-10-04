@@ -1,7 +1,19 @@
 // แสดงภาพประกอบของโจทย์
-// - ถ้าเป็นอิโมจิล้วน จะเด้งทีละตัว
+// - อิโมจิล้วน: แต่ละกลุ่ม (คั่นด้วยช่องว่าง) อยู่ในกรอบของตัวเอง ให้นับเป็นกลุ่มละ 10 ได้ง่าย
+// - เครื่องหมาย + − = · แสดงเป็นตัวดำเนินการระหว่างกลุ่ม
 // - ถ้ามีตัวเลข/ข้อความ จะแสดงเป็นข้อความใหญ่
-const EMOJI_ONLY = /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\s+·]+$/u
+const EMOJI_ONLY = /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\s+·−=]+$/u
+const OPERATORS = new Set(['+', '−', '=', '·'])
+
+/** แยกตัวอักษรตามที่ตาเห็น เพื่อไม่ให้อิโมจิที่ประกอบหลายรหัสถูกตัดกลาง */
+function graphemes(s: string): string[] {
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    return [...new Intl.Segmenter('th', { granularity: 'grapheme' }).segment(s)].map(
+      (x) => x.segment,
+    )
+  }
+  return [...s]
+}
 
 export function Visual({ visual }: { visual?: string }) {
   if (!visual) return null
@@ -11,23 +23,24 @@ export function Visual({ visual }: { visual?: string }) {
     return (
       <div className="visual">
         {parts.map((part, i) => {
-          if (part === '+')
+          if (OPERATORS.has(part)) {
             return (
-              <span key={i} style={{ fontSize: 32, fontWeight: 900 }}>
-                +
+              <span key={i} className="op">
+                {part}
               </span>
             )
-          if (part === '·')
-            return (
-              <span key={i} style={{ opacity: 0.4 }}>
-                ·
-              </span>
-            )
-          return [...part].map((ch, j) => (
-            <span key={`${i}-${j}`} className="obj">
-              {ch}
+          }
+          const items = graphemes(part)
+          return (
+            // มีกรอบทุกกลุ่มเมื่อภาพมีหลายกลุ่ม (แม้กลุ่มนั้นจะมีชิ้นเดียว) ให้นับได้สม่ำเสมอ
+            <span key={i} className={items.length > 1 || parts.length > 1 ? 'objGroup' : undefined}>
+              {items.map((ch, j) => (
+                <span key={j} className="obj">
+                  {ch}
+                </span>
+              ))}
             </span>
-          ))
+          )
         })}
       </div>
     )

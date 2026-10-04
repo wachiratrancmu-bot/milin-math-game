@@ -1,10 +1,17 @@
 import type { Settings } from '../types'
+import type { RoundOptions } from '../lib/quiz'
 import { useSettings } from '../state/SettingsContext'
 import { useProgress } from '../state/ProgressContext'
-import { TOPIC_NAMES, TOPIC_ICONS } from '../data/questions'
+import { CHAPTER_GUIDE, CHAPTER_NAMES } from '../data/questions'
+
+/** ค่าที่ใช้เริ่มรอบ: patch ใช้เฉพาะรอบนี้ ไม่บันทึกทับค่าตั้งของพ่อแม่ */
+export interface StartConfig {
+  patch?: Partial<Settings>
+  options?: RoundOptions
+}
 
 interface Props {
-  onStart: (override?: Partial<Settings>) => void
+  onStart: (config?: StartConfig) => void
   onOpenParent: () => void
 }
 
@@ -14,31 +21,65 @@ const PRESETS: {
   title: string
   desc: string
   cls: string
-  patch: Partial<Settings>
+  config: StartConfig
 }[] = [
   {
-    key: 'rainbow',
-    icon: '🌈',
-    title: 'ภารกิจสายรุ้ง',
-    desc: 'เริ่มแบบสบาย ๆ มีคำใบ้ช่วยทุกข้อ',
+    key: 'ch4',
+    icon: '🔢',
+    title: 'ฝึกบทที่ 4',
+    desc: 'จำนวน 11–20 · หลักสิบ หลักหน่วย · เปรียบเทียบ (15 ข้อ)',
     cls: 'secondary',
-    patch: { mode: 'practice', mix: 'warmup' },
+    config: {
+      patch: { mode: 'practice', questionsPerRound: 15, mix: 'balanced' },
+      options: { chapters: [4] },
+    },
   },
   {
-    key: 'star',
-    icon: '⭐',
-    title: 'ภารกิจดวงดาว',
-    desc: 'ฝึกจริงจังขึ้น เพื่อเก็บดาวให้มากกว่าเดิม',
+    key: 'ch5',
+    icon: '➕',
+    title: 'ฝึกบทที่ 5',
+    desc: 'การบวกไม่เกิน 20 · หาตัวไม่ทราบค่า · โจทย์ปัญหา (15 ข้อ)',
+    cls: 'secondary',
+    config: {
+      patch: { mode: 'practice', questionsPerRound: 15, mix: 'balanced' },
+      options: { chapters: [5] },
+    },
+  },
+  {
+    key: 'ch6',
+    icon: '➖',
+    title: 'ฝึกบทที่ 6',
+    desc: 'การลบไม่เกิน 20 · มากกว่ากันกี่ · ตรวจคำตอบ (15 ข้อ)',
+    cls: 'secondary',
+    config: {
+      patch: { mode: 'practice', questionsPerRound: 15, mix: 'balanced' },
+      options: { chapters: [6] },
+    },
+  },
+  {
+    key: 'all',
+    icon: '🌟',
+    title: 'แบบฝึกรวม 40 ข้อ',
+    desc: 'ทบทวนครบทั้งบทที่ 4–6 มีคำใบ้และวิธีคิด',
     cls: 'primary',
-    patch: { mode: 'practice', mix: 'balanced' },
+    config: { patch: { mode: 'practice', questionsPerRound: 40, mix: 'balanced' } },
   },
   {
-    key: 'crown',
-    icon: '👑',
-    title: 'ภารกิจมงกุฎ',
-    desc: 'ท้าทายแบบทดสอบ พร้อมเป็นแชมป์คณิต',
+    key: 'mock',
+    icon: '📝',
+    title: 'ข้อสอบจำลอง 20 ข้อ',
+    desc: 'ปรนัยล้วนเหมือนข้อสอบจริง ไม่มีคำใบ้ ตอบได้ครั้งเดียว',
     cls: 'green',
-    patch: { mode: 'exam', mix: 'challenge' },
+    config: {
+      patch: {
+        mode: 'exam',
+        questionsPerRound: 20,
+        mix: 'balanced',
+        maxTries: 1,
+        showHints: false,
+      },
+      options: { choiceOnly: true },
+    },
   },
 ]
 
@@ -55,8 +96,10 @@ export function Home({ onStart, onOpenParent }: Props) {
         <div className="brand">
           <div className="mark">⭐</div>
           <div>
-            <h1>ผจญภัยดาวคณิตของ{settings.playerName}</h1>
-            <div className="caption">เล่นสนุก คิดเป็นขั้นตอน เก็บดาวแลกรางวัล</div>
+            <h1>
+              ผจญภัยดาวคณิตของ<span className="nobr">{settings.playerName}</span>
+            </h1>
+            <div className="caption">คณิตศาสตร์ ป.1 บทที่ 4–6 · เก็บดาวแลกรางวัล</div>
           </div>
         </div>
         <div className="btnRow" style={{ marginTop: 0 }}>
@@ -75,12 +118,16 @@ export function Home({ onStart, onOpenParent }: Props) {
         <div className="card hero">
           <div className="mascotRow">
             <div className="mascot">🐰</div>
-            <div className="speech">เลือกภารกิจที่ต้องการ แล้วเริ่มเก็บดาวได้เลย</div>
+            <div className="speech">
+              ข้อสอบจริงเป็นแบบเลือกตอบ 20 ข้อ ฝึกทีละบทก่อน แล้วลองทำข้อสอบจำลองนะ
+            </div>
           </div>
 
-          <div className="heroTitle">วันนี้{settings.playerName}จะเก็บดาวได้กี่ดวง</div>
+          <div className="heroTitle">
+            วันนี้<span className="nobr">{settings.playerName}</span>จะเก็บดาวได้กี่ดวง
+          </div>
           <p className="heroText">
-            เลือกภารกิจที่ต้องการแล้วเริ่มเล่นได้ทันที ทุกข้อช่วยฝึกให้คิดเลขได้อย่างมั่นใจขึ้น
+            เลือกฝึกทีละบท ทำแบบฝึกรวม หรือลองทำข้อสอบจำลองให้คุ้นกับข้อสอบจริง
           </p>
 
           <div className="missionGrid">
@@ -91,16 +138,16 @@ export function Home({ onStart, onOpenParent }: Props) {
                   <b>{p.title}</b>
                   <span>{p.desc}</span>
                 </div>
-                <button className={`${p.cls} smallBtn`} onClick={() => onStart(p.patch)}>
-                  เริ่มภารกิจ
+                <button className={`${p.cls} smallBtn`} onClick={() => onStart(p.config)}>
+                  เริ่ม
                 </button>
               </div>
             ))}
           </div>
 
           <div className="btnRow">
-            <button className="primary" onClick={() => onStart()}>
-              ▶ เริ่มเล่นด้วยค่าที่ตั้งไว้
+            <button className="ghost" onClick={() => onStart()}>
+              ▶ เล่นด้วยค่าที่ผู้ปกครองตั้งไว้
             </button>
           </div>
         </div>
@@ -136,19 +183,29 @@ export function Home({ onStart, onOpenParent }: Props) {
               <span>รอบที่ทำเต็ม</span>
             </div>
           </div>
-
-          <div className="topicList">
-            <h3 style={{ margin: '14px 0 6px', fontSize: 16 }}>ด่านที่จะได้เจอ</h3>
-            {settings.enabledTopics.map((t) => (
-              <div className="topic" key={t}>
-                <div className="topicIcon">{TOPIC_ICONS[t]}</div>
-                <div>
-                  <b>{TOPIC_NAMES[t]}</b>
-                </div>
-              </div>
-            ))}
-          </div>
         </aside>
+      </section>
+
+      <section className="card guide">
+        <h2 style={{ margin: '0 0 4px' }}>สิ่งที่ต้องทำได้ก่อนสอบ</h2>
+        <p className="mini" style={{ marginTop: 0 }}>
+          แนวข้อสอบ: ปรนัย 20 ข้อ ข้อละ 1 คะแนน เนื้อหาบทที่ 4–6
+        </p>
+        <div className="guideGrid">
+          {CHAPTER_GUIDE.map((g) => (
+            <div className="guideCard" key={g.chapter}>
+              <b>
+                {g.icon} {CHAPTER_NAMES[g.chapter]}
+              </b>
+              <ul>
+                {g.points.map((p) => (
+                  <li key={p}>{p}</li>
+                ))}
+              </ul>
+              <div className="guideExample">ตัวอย่าง: {g.example}</div>
+            </div>
+          ))}
+        </div>
       </section>
     </main>
   )

@@ -5,6 +5,7 @@ import { isCorrect, shuffle, pick } from '../lib/quiz'
 import { playCorrect, playWrong } from '../lib/sound'
 import { fireConfetti } from '../lib/confetti'
 import { Visual } from './Visual'
+import { ThaiText } from './ThaiText'
 
 const PRAISE = [
   'ตอบถูกต้อง เก่งมาก ⭐',
@@ -133,8 +134,14 @@ export function QuestionView({
       <div className="tag">
         {TOPIC_NAMES[question.topic]} · ระดับ{LEVEL_NAMES[question.level]}
       </div>
-      <div className="question">{question.text}</div>
-      {question.small && <p className="instruction">{question.small}</p>}
+      <div className={`question ${question.text.length > 34 ? 'long' : ''}`}>
+        <ThaiText text={question.text} />
+      </div>
+      {question.small && (
+        <p className="instruction">
+          <ThaiText text={question.small} />
+        </p>
+      )}
       <Visual visual={question.visual} />
 
       {question.kind === 'choice' ? (
@@ -181,7 +188,11 @@ export function QuestionView({
         </div>
       )}
 
-      {showHints && !locked && question.hint && <div className="hintBox">💡 {question.hint}</div>}
+      {showHints && !locked && question.hint && (
+        <div className="hintBox">
+          💡 <ThaiText text={question.hint} />
+        </div>
+      )}
 
       {feedbackMsg && (
         <div className="feedback" style={{ color: correct ? 'var(--green2)' : 'var(--red)' }}>
@@ -199,7 +210,9 @@ export function QuestionView({
       {locked && (
         <>
           {(!correct || showHints) && question.explain && (
-            <div className="explain">วิธีคิด: {question.explain}</div>
+            <div className="explain">
+              วิธีคิด: <ThaiText text={question.explain} />
+            </div>
           )}
           <div className="btnRow" style={{ justifyContent: 'center' }}>
             <button className="green" onClick={onNext}>
